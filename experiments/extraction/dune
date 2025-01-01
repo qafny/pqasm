@@ -1,0 +1,14 @@
+(executable
+  (name generate_circuits)
+  (modules generate_circuits)
+  (libraries ml unix))
+
+(executable
+  (name run_voqc)
+  (modules run_voqc)
+  (libraries voqc))
+
+(executable
+  (name PQASM)
+  (modules PQASM)
+  (libraries BasicUtility BinNat Datatypes ListSet MathSpec PeanoNat VectorStates))
