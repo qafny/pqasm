@@ -74,9 +74,9 @@ Inductive ityping : list qrecord -> flag -> iota -> list qrecord -> Prop :=
  | mu_nor : forall g qs mu th T, type_mu qs mu -> sublist qs (nor th) -> ityping (th::T) g (Ora mu) (th::T)
  | cu_nor : forall g q qs ia th T, nor th = (q::qs) ->
                       ityping ((nor_sub th qs)::T) MF ia ((nor_sub th qs)::T) -> ityping (th::T) g (ICU q ia) (th::T)
- | cu_had : forall g q qs ia th T, nor th = (q::qs) -> 
+ | cu_had : forall g q qs ia th T, had th = (q::qs) -> 
                       ityping ((had_sub th qs)::T) MF ia ((had_sub th qs)::T) -> ityping (th::T) g (ICU q ia) (th::T)
- | iseq_ty : forall g qa qb T1 T2 T3, ityping T1 g qa T2 -> ityping T2 g qb T3 -> ityping T1 g (ISeq qa qb) T2.
+ | iseq_ty : forall g qa qb T1 T2 T3, ityping T1 g qa T2 -> ityping T2 g qb T3 -> ityping T1 g (ISeq qa qb) T3.
 
 Inductive etype : list var -> list qrecord -> exp -> list qrecord -> Prop :=
  | skip_ty : forall T s, etype s T ESKIP T
@@ -191,6 +191,10 @@ Definition rot_consist (s: list posi) (phi: state) :=
 Definition type_consist_eta (T:list qrecord) (phi:eta_state) :=
  forall s, In s T -> nor_consist_eta (had s) phi /\ nor_consist_eta (nor s) phi /\ rot_consist_eta (rot s) phi.
 
+
+Definition type_no_change_eta (T:list qrecord) (phi phi':eta_state) :=
+ forall s, ~ In s (flat_union T) -> phi s = phi' s.
+
 Definition type_consist (T:list qrecord) (phi:state) :=
   forall i, i < fst phi -> type_consist_eta T (snd ((snd phi) i)).
 
@@ -218,7 +222,7 @@ Proof.
   intros. induction H.
   unfold disjoint_record in *. simpl in *. easy.
   easy. easy. easy. easy.
-  apply IHityping1. easy.
+  apply IHityping2. apply IHityping1. easy.
 Qed.
 
 Lemma rec_union_same : forall a b c d e f, a ++ b ++ c = d ++ e ++ f -> rec_union (a,b,c) = rec_union (d,e,f).
@@ -226,14 +230,6 @@ Proof.
   intros.
   unfold rec_union,had,nor in *. simpl in *. easy.
 Qed.
-
-Lemma disjoint_etype : forall s T T1 e, etype s T e T1 -> disjoint_record T -> disjoint_record T1.
-Proof.
-  intros. induction H. easy.
-  eapply disjoint_itype. apply H. easy.
-  unfold disjoint_record,flat_union in *. simpl in *.
-  rewrite rec_union_same with (d := nil) (e := qs) (f := nil); try easy. 
-Admitted.
 
 Definition DIn (q:posi) (s:qrecord) := In q (fst (fst s)) \/ In q (snd (fst s)) \/ In q (snd s).
 
@@ -280,7 +276,7 @@ Qed.
 
 Axiom mu_handling_preserve: forall rmax qs mu th T phi, 
   disjoint_record (th :: T) -> type_consist_eta (th :: T) phi -> sublist qs (nor th) -> 
-    type_consist_eta (th :: T) (mu_handling rmax mu phi).
+    type_consist_eta (th :: T) (mu_handling rmax mu phi) /\ type_no_change_eta (th::T) (mu_handling rmax mu phi) phi.
 
 Axiom etype_subst: forall x s T e T1 v, etype (x :: s) T e T1 -> etype s T (exp_subst_c e x v) T1.
 
@@ -291,11 +287,63 @@ Axiom had_type_consist: forall qs T phi, disjoint_record (([], qs, []) :: T) -> 
 type_consist ((qs, [], []) :: T) (apply_hads phi qs).
 
 
-Lemma itype_preservation: 
-   forall rmax g T T1 phi e, disjoint_record T -> type_consist_eta T phi -> ityping T g e T1 -> type_consist_eta T1 (instr_sem rmax e phi).
+Lemma ford_left_head : 
+  forall T a qs, fold_left (fun (a0 : list posi) (b : qrecord) => a0 ++ had b ++ nor b ++ rot b) T
+  (a :: qs ++ []) =
+a
+:: fold_left (fun (a0 : list posi) (b : qrecord) => a0 ++ had b ++ nor b ++ rot b)
+     T (nor ([], qs, []) ++ []).
 Proof.
   intros.
-  induction H1; simpl in *.
+  rewrite <- fold_left_rev_right.
+  rewrite <- fold_left_rev_right.
+  remember (rev T) as Q. clear HeqQ.
+  induction Q. simpl in *. easy.
+  simpl in *.
+  rewrite IHQ. easy.
+Qed.
+
+Lemma fold_left_head_1:
+   forall (T:list qrecord) (a: list posi), 
+    fold_left (fun (a0 : list posi) (b : qrecord) => a0 ++ rec_union b)  T a 
+         = a ++ (fold_left (fun (a0 : list posi) (b : qrecord) => a0 ++ rec_union b) T nil).
+Proof.
+  intros.
+  rewrite <- fold_left_rev_right.
+  rewrite <- fold_left_rev_right.
+  remember (rev T) as Q. clear HeqQ.
+  induction Q; simpl in *.
+  rewrite app_nil_r. easy.
+  rewrite IHQ. rewrite app_assoc. easy.
+Qed.
+
+Axiom disjoint_move : forall l0 qs l, 
+     disjoint (l0 ++ qs ++ l) <-> disjoint (qs ++ l0 ++ l).
+
+Lemma not_in_app {A} : forall (a:A) l1 l2, ~ In a (l1 ++ l2) -> ~ In a l1 /\ ~ In a l2.
+Proof.
+  intros. induction l1. simpl in *. split. easy. easy. simpl in *.
+  apply not_or_and in H. destruct H. apply IHl1 in H0. destruct H0.
+  split; try easy. apply and_not_or. split; try easy.
+Qed.
+
+Lemma ityping_not_in: forall T g e T1 s, ityping T g e T1 -> ~ In s (flat_union T1) -> ~ In s (flat_union T).
+Proof.
+  intros. induction H; unfold flat_union in *; simpl in *.
+  rewrite fold_left_head_1 in *.
+  unfold rec_union, had, nor in *; simpl in *. easy. 1-4:easy.
+  apply IHityping1. apply IHityping2. easy.
+Qed.
+
+Lemma itype_preservation: 
+   forall rmax g T T1 phi e, disjoint_record T -> type_consist_eta T phi 
+          -> ityping T g e T1 -> type_consist_eta T1 (instr_sem rmax e phi) /\ type_no_change_eta T1 (instr_sem rmax e phi) phi.
+Proof.
+  intros.
+  generalize dependent phi.
+  induction H1; simpl in *; intros.
+ (* ry gate *)
+  split.
   unfold type_consist_eta in *. intros.
   inv H1. split. simpl in *.
   unfold nor_consist_eta in *. intros. inv H1.
@@ -415,16 +463,30 @@ Proof.
   assert (p0 <> p).
   apply DIn_prop with (s := s); try easy.
   intros R. subst. easy.
-  unfold DIn. simpl in *. right. left. left. easy. 
+  unfold DIn. simpl in *. right. left. left. easy.
+  unfold type_no_change_eta in *.
+  intros. unfold ry_rotate.
+  assert (p <> s).
+  unfold flat_union,rec_union in *. simpl in *.
+  replace ([p]) with (p :: [] ++ []) in H1 by easy.
+  rewrite ford_left_head in H1. simpl in *.
+  apply not_or_and  in H1. destruct H1.
+  intros R. subst. easy.
+  destruct (phi p). destruct b.
+  rewrite eupdate_index_neq; easy.
+  rewrite eupdate_index_neq; easy.
+  rewrite eupdate_index_neq; easy.
+  (* Ry gate Rot type *)
+  split. 
   unfold type_consist_eta in *.
   intros. inv H2.
-  assert (In p (rot s)). rewrite H1. simpl;left;easy.
+  assert (In p (rot s)). rewrite H0. simpl;left;easy.
   apply disjoint_not_rot_had with (T := T) in H2 as G1; try easy.
   apply disjoint_not_rot_nor with (T := T) in H2 as G2; try easy.
   unfold nor_consist_eta in *. split.
   intros.
   apply In_conv with (q' := p) in H3 as G3; try easy.
-  assert (In s (s::T)). left; easy. apply H0 in H4.
+  assert (In s (s::T)). left; easy. apply H1 in H4.
   destruct H4 as [X1 [X2 X3]].
   unfold ry_rotate in *.
   destruct (phi p). destruct b.
@@ -437,7 +499,7 @@ Proof.
   split.
   intros.
   apply In_conv with (q' := p) in H3 as G3; try easy.
-  assert (In s (s::T)). left; easy. apply H0 in H4.
+  assert (In s (s::T)). left; easy. apply H1 in H4.
   destruct H4 as [X1 [X2 X3]].
   unfold ry_rotate in *.
   destruct (phi p). destruct b.
@@ -449,7 +511,7 @@ Proof.
   apply X2. easy. intros R. subst. easy.
   unfold rot_consist_eta in *. intros.
   unfold ry_rotate in *.
-  assert (In s (s::T)). left; easy. apply H0 in H4.
+  assert (In s (s::T)). left; easy. apply H1 in H4.
   destruct H4 as [X1 [X2 X3]].
   apply X3 in H3. destruct H3.
   destruct (phi p). destruct b.
@@ -468,18 +530,18 @@ Proof.
   exists (angle_sum n r rmax). easy.
   rewrite eupdate_index_neq.
   exists x. easy. easy.
-  assert (In p (rot th)). rewrite H1. left; easy.
+  assert (In p (rot th)). rewrite H0. left; easy.
   apply rottoDIn in H2 as G1.
   apply disjoint_not_in with (s' := s) (T := T) in G1 as G2; try easy.
   assert (In s (th :: T)) as G3.
   right; easy.
-  specialize (H0 s G3).
-  destruct H0 as [X1 [X2 X3]].
+  specialize (H1 s G3).
+  destruct H1 as [X1 [X2 X3]].
   unfold nor_consist_eta, ry_rotate in *. split.
   intros.
-  apply X1 in H0 as X4. destruct X4.
-  apply hadtoDIn in H0.
-  apply DIn_prop with (q' := p) in H0 as X5; try easy.
+  apply X1 in H1 as X4. destruct X4.
+  apply hadtoDIn in H1.
+  apply DIn_prop with (q' := p) in H1 as X5; try easy.
   destruct (phi p). destruct b.
   rewrite eupdate_index_neq.
   exists x. easy. intros R. subst. easy.
@@ -489,9 +551,9 @@ Proof.
   exists x. easy. intros R. subst. easy.
   split.
   intros.
-  apply X2 in H0 as X4. destruct X4.
-  apply nortoDIn in H0.
-  apply DIn_prop with (q' := p) in H0 as X5; try easy.
+  apply X2 in H1 as X4. destruct X4.
+  apply nortoDIn in H1.
+  apply DIn_prop with (q' := p) in H1 as X5; try easy.
   destruct (phi p). destruct b.
   rewrite eupdate_index_neq.
   exists x. easy. intros R. subst. easy.
@@ -501,9 +563,9 @@ Proof.
   exists x. easy. intros R. subst. easy.
   unfold rot_consist_eta in *.
   intros.
-  apply X3 in H0 as X4. destruct X4.
-  apply rottoDIn in H0.
-  apply DIn_prop with (q' := p) in H0 as X5; try easy.
+  apply X3 in H1 as X4. destruct X4.
+  apply rottoDIn in H1.
+  apply DIn_prop with (q' := p) in H1 as X5; try easy.
   destruct (phi p). destruct b.
   rewrite eupdate_index_neq.
   exists x. easy. intros R. subst. easy.
@@ -511,8 +573,206 @@ Proof.
   exists x. easy. intros R. subst. easy.
   rewrite eupdate_index_neq.
   exists x. easy. intros R. subst. easy.
-  specialize (mu_handling_preserve rmax qs mu th T phi H H0 H2) as G1. easy.
-Admitted.
+  unfold type_no_change_eta in *.
+  intros. unfold ry_rotate.
+  assert (p <> s).
+  unfold flat_union in *. simpl in *.
+  rewrite fold_left_head_1 in H2.
+  unfold rec_union in *.
+  rewrite H0 in H2. simpl in *.
+  apply not_in_app in H2. destruct H2.
+  apply not_in_app in H2. destruct H2. apply not_in_app in H4. destruct H4.
+  simpl in *. apply not_or_and in H5. destruct H5. easy.
+  destruct (phi p). destruct b.
+  rewrite eupdate_index_neq; easy.
+  rewrite eupdate_index_neq; easy.
+  rewrite eupdate_index_neq; easy.
+  (* Oracle *)
+  specialize (mu_handling_preserve rmax qs mu th T phi H H2 H1) as G1. easy.
+  (* ICU Nor *)
+  unfold nor, nor_sub,had in *. destruct th. destruct p. simpl in *. subst.
+  assert (disjoint_record ((l0, qs, l) :: T)).
+  clear H1 H2 IHityping.
+  unfold disjoint_record in *. 
+  unfold flat_union in *. simpl in *.
+  rewrite fold_left_head_1 in *.
+  remember (fold_left (fun (a0 : list posi) (b : qrecord) => a0 ++ rec_union b) T []) as Q.
+  clear HeqQ.
+  unfold rec_union,nor,had in *; simpl in *.
+  rewrite <- app_assoc with (n := Q) in H.
+  rewrite app_comm_cons in H.
+  rewrite <- app_assoc with (n := Q) in H.
+  rewrite disjoint_move in H.
+  rewrite <- app_comm_cons in H.
+  inv H.
+  rewrite disjoint_move in H3.
+  rewrite <- app_assoc with (n := Q).
+  rewrite <- app_assoc with (n := Q). easy.
+  assert (type_consist_eta ((l0, qs, l) :: T) phi).
+  clear H0 IHityping H1.
+  unfold type_consist_eta in *.
+  intros. simpl in *. destruct H0. subst.
+  unfold had,nor,rot,nor_consist_eta in *; simpl in *.
+  assert ((l0, q :: qs, l) = (l0, q :: qs, l) \/ In (l0, q :: qs, l) T).
+  left. easy.
+  apply H2 in H0. destruct H0 as [X1 [X2 X3]].
+  split. intros.
+  apply X1. easy.
+  split. intros. apply X2. simpl. right. easy.
+  apply X3.
+  assert ((l0, q :: qs, l) = s \/ In s T). right. easy.
+  apply H2 in H1. destruct H1 as [X1 [X2 X3]].
+  easy.
+  destruct (IHityping H0 phi H3) as [G1 G2].
+  split.
+  assert (~ In q (flat_union ((l0, qs, l) :: T))).
+  simpl in *.
+  clear IHityping H1 H3 G1 G2.
+  unfold disjoint_record in H.
+  unfold flat_union in *. simpl in *.
+  rewrite fold_left_head_1 in H. rewrite fold_left_head_1.
+  unfold rec_union,had,nor in *. simpl in *.
+  remember (fold_left
+         (fun (a0 : list posi) (b : qrecord) =>
+          a0 ++ fst (fst b) ++ snd (fst b) ++ rot b) T []) as Q. clear HeqQ.
+  rewrite <- app_assoc with (n := Q) in H.
+  rewrite app_comm_cons in H.
+  rewrite <- app_assoc in H.
+  rewrite disjoint_move in H.
+  rewrite <- app_comm_cons in H.
+  rewrite <- app_assoc.
+  rewrite <- app_assoc.
+  inv H.
+  apply not_in_app in H4. destruct H4.
+  apply not_in_app in H1. destruct H1.
+  intros R.
+  apply in_app_or in R. destruct R; try easy.
+  apply in_app_or in H4. destruct H4; try easy.
+  destruct (phi q). destruct b.
+  unfold type_consist_eta in *.
+  intros. simpl in *. destruct H5. subst.
+  unfold had,nor,rot,nor_consist_eta in *; simpl in *.
+  assert ((l0, qs, l) = (l0, qs, l) \/ In (l0, qs, l) T).
+  left. easy.
+  apply G1 in H5. destruct H5 as [X1 [X2 X3]]. simpl in *.
+  split. intros.
+  apply X1. easy.
+  split. intros. destruct H5. subst. apply G2 in H4. rewrite H4.
+  assert ((l0, p :: qs, l) = (l0, p :: qs, l) \/ In (l0, p :: qs, l) T).
+  left. easy. apply H2 in H5. destruct H5 as [X4 [X5 X6]].
+  apply X5. simpl in *. left. easy.
+  apply X2. simpl. easy.
+  apply X3.
+  assert ((l0, qs, l) = s \/ In s T). right. easy.
+  apply G1 in H6. destruct H6 as [X1 [X2 X3]].
+  easy. easy. easy.
+  destruct (phi q). destruct b.
+  unfold type_no_change_eta in *.
+  intros. apply G2.
+  clear H0 H H2 IHityping H1 H3 G1 G2.
+  unfold flat_union in *. simpl in *.
+  rewrite fold_left_head_1 in H4. rewrite fold_left_head_1.
+  unfold rec_union,nor,had in *. simpl in *.
+  remember (fold_left
+          (fun (a0 : list posi) (b : qrecord) =>
+           a0 ++ fst (fst b) ++ snd (fst b) ++ rot b) T []) as Q.
+  clear HeqQ.
+  apply not_in_app in H4. destruct H4. apply not_in_app in H.
+  destruct H. simpl in *.
+  intros R.
+  apply in_app_or in R.
+  destruct R; try easy.
+  apply in_app_or in H2.
+  destruct H2; try easy.
+  apply not_or_and in H1. destruct H1. easy.
+  unfold type_no_change_eta in *. intros. easy.
+  unfold type_no_change_eta in *. intros. easy.
+  (* ICU Had *)
+  unfold had_sub, nor ,had in *. destruct th. destruct p. simpl in *. subst.
+  assert (disjoint_record ((qs, l1, l) :: T)).
+  clear H1 H2 IHityping.
+  unfold disjoint_record in *. 
+  unfold flat_union in *. simpl in *.
+  rewrite fold_left_head_1 in *.
+  remember (fold_left (fun (a0 : list posi) (b : qrecord) => a0 ++ rec_union b) T []) as Q.
+  clear HeqQ.
+  unfold rec_union,nor,had in *; simpl in *.
+  rewrite <- app_assoc with (n := Q) in H.
+  rewrite <- app_assoc with (n := Q) in H.
+  inv H.
+  rewrite <- app_assoc with (n := Q).
+  rewrite <- app_assoc with (n := Q). easy.
+  assert (type_consist_eta ((qs, l1, l) :: T) phi).
+  clear H IHityping H1.
+  unfold type_consist_eta in *.
+  intros. simpl in *. destruct H. subst.
+  unfold had,nor,rot,nor_consist_eta in *; simpl in *.
+  assert ((q :: qs, l1, l) = (q :: qs, l1, l) \/ In (q :: qs, l1, l) T).
+  left. easy.
+  apply H2 in H. destruct H as [X1 [X2 X3]].
+  split. intros.
+  apply X1. simpl in *. right. easy.
+  split. intros. apply X2. simpl. easy.
+  apply X3.
+  assert ((q :: qs, l1, l) = s \/ In s T). right. easy.
+  apply H2 in H1. destruct H1 as [X1 [X2 X3]].
+  easy.
+  destruct (IHityping H0 phi H3) as [G1 G2].
+  split.
+  assert (~ In q (flat_union ((qs, l1, l) :: T))).
+  simpl in *.
+  clear IHityping H1 H3 G1 G2.
+  unfold disjoint_record in H.
+  unfold flat_union in *. simpl in *.
+  rewrite fold_left_head_1 in H. rewrite fold_left_head_1.
+  unfold rec_union,had,nor in *. simpl in *.
+  remember (fold_left
+            (fun (a0 : list posi) (b : qrecord) =>
+             a0 ++ fst (fst b) ++ snd (fst b) ++ rot b) T []) as Q. clear HeqQ.
+  inv H. easy.
+  destruct (phi q). destruct b.
+  unfold type_consist_eta in *.
+  intros. simpl in *. destruct H5. subst.
+  unfold had,nor,rot,nor_consist_eta in *; simpl in *.
+  assert ((qs, l1, l) = (qs, l1, l) \/ In (qs, l1, l) T).
+  left. easy.
+  apply G1 in H5. destruct H5 as [X1 [X2 X3]]. simpl in *.
+  split. intros.
+  destruct H5. subst. apply G2 in H4. rewrite H4.
+  assert ((p :: qs, l1, l) = (p :: qs, l1, l) \/ In (p :: qs, l1, l) T).
+  left. easy. apply H2 in H5. destruct H5 as [X4 [X5 X6]].
+  apply X4. simpl in *. left. easy.
+  apply X1. easy.
+  split. intros.
+  apply X2. simpl. easy.
+  apply X3.
+  assert ((qs, l1, l) = s \/ In s T). right. easy.
+  apply G1 in H6. destruct H6 as [X1 [X2 X3]].
+  easy. easy. easy.
+  destruct (phi q). destruct b.
+  unfold type_no_change_eta in *.
+  intros. apply G2.
+  clear H0 H H2 IHityping H1 H3 G1 G2.
+  unfold flat_union in *. simpl in *.
+  rewrite fold_left_head_1 in H4. rewrite fold_left_head_1.
+  unfold rec_union,nor,had in *. simpl in *.
+  remember (fold_left
+          (fun (a0 : list posi) (b : qrecord) =>
+           a0 ++ fst (fst b) ++ snd (fst b) ++ rot b) T []) as Q.
+  clear HeqQ.
+  apply not_or_and in H4. destruct H4. easy.
+  unfold type_no_change_eta in *. intros. easy.
+  unfold type_no_change_eta in *. intros. easy.
+  (* Seq *)
+  apply disjoint_itype in H1_ as G1; try easy.
+  destruct (IHityping1 H phi H0) as [X1 X2].
+  destruct (IHityping2 G1 (instr_sem rmax qa phi) X1) as [X3 X4].
+  split. easy.
+  unfold type_no_change_eta in *.
+  intros. rewrite X4; try easy.
+  rewrite X2. easy.
+  apply ityping_not_in with (s := s) in H1_0; try easy.
+Qed.
 
 
 Lemma itype_preservation_app: forall n rmax g T T1 phi e,
@@ -580,22 +840,6 @@ Proof.
            x ++ rec_union y) [] Q)) as W.
   intros R. apply in_app_or in R. destruct R. easy.
   assert (set_In a0 (V ++ rec_union a1)). apply in_or_app. right. easy. easy.
-Qed.
-
-Lemma ford_left_head : 
-  forall T a qs, fold_left (fun (a0 : list posi) (b : qrecord) => a0 ++ had b ++ nor b ++ rot b) T
-  (a :: qs ++ []) =
-a
-:: fold_left (fun (a0 : list posi) (b : qrecord) => a0 ++ had b ++ nor b ++ rot b)
-     T (nor ([], qs, []) ++ []).
-Proof.
-  intros.
-  rewrite <- fold_left_rev_right.
-  rewrite <- fold_left_rev_right.
-  remember (rev T) as Q. clear HeqQ.
-  induction Q. simpl in *. easy.
-  simpl in *.
-  rewrite IHQ. easy.
 Qed.
 
 
