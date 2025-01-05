@@ -41,8 +41,10 @@ Run `make` in the top-level directory to compile our Coq proofs. See the README 
 ## Directory Contents
 
 PQASM
-* PQASM.v -  PQASM language, semantics, and compilation from PQASM to SQIR.
+* PQASM.v -  PQASM language and semantics.
 * PTesting.v -  Data structures and theorems for PBT testing, as well as PBT testing results for quantum state preparation programs.
+* PQASMProof.v - The type system and soundness theorems of PQASM.
+* PQASMSQIR.v - The compilation from PQASM to SQIR and the proof.
 
 OQASM
 * OQASM.v - OQASM language, type system, and compilation from OQASM to SQIR.

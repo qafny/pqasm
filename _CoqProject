@@ -29,6 +29,7 @@ MathSpec.v
 OQASM.v
 PQASM.v
 PTesting.v
+PQASMProof.v
 OQASMProof.v
 Testing.v
 CLArith.v
