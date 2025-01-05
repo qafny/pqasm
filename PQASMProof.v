@@ -864,36 +864,6 @@ generalize dependent e'.
     exists ((qs, nil, nil)::T).
     split. try constructor.
     apply had_type_consist; try easy.
-(*
-    induction qs. simpl in *. easy.
-    simpl in *.
-    unfold type_consist,add_had in *.
-    intros. simpl in *.
-    remember (fst (apply_hads phi qs)) as m.
-    assert (disjoint_record  (([], qs, []) :: T)).
-    unfold disjoint_record in *. 
-    assert ((flat_union (([], a :: qs, []) :: T)) = a :: (flat_union (([], qs, []) :: T))).
-    clear HDis Heqm IHqs Hconsist H.
-    unfold flat_union,rec_union. simpl in *.
-    rewrite ford_left_head. easy.
-    rewrite H0 in HDis. inv HDis. easy.
-    assert ((forall i : nat,
-        i < fst phi -> type_consist_eta (([], qs, []) :: T) (snd (snd phi i)))).
-    intros. apply Hconsist in H1.
-    unfold type_consist_eta in *.
-    intros.
-    simpl in *. destruct H2. subst.
-    unfold nor_consist_eta in *. simpl in *.
-    split. intros. easy.
-    split. intros. 
-    assert (([]: list posi, a :: qs, [] : list posi) = ([], a :: qs, []) \/ In ([], a :: qs, []) T).
-    left. easy. apply H1 in H3. destruct H3 as [X1 [X2 X3]].
-    apply X2. simpl in *. right. apply H2. easy.
-    assert (([], a :: qs, []) = s0 \/ In s0 T). right. easy.
-    apply H1 in H3. easy.
-    specialize (IHqs H0 H1).
-    admit.
-*)
 
   - (* Case: New *)
     intros. inv Hsem.
