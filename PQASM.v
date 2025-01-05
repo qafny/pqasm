@@ -397,7 +397,6 @@ Fixpoint exp_subst_c (a:exp) (x:var) (n:nat) :=
 Inductive prog_sem {rmax:nat}: state -> exp -> R -> state -> exp -> Prop :=
    seq_sem_1 : forall phi e,  prog_sem phi (ESKIP [;] e) (1:R) phi e
  | seq_sem_2: forall phi phi' r e1 e1' e2, prog_sem phi e1 r phi' e1' -> prog_sem phi (e1 [;] e2) r phi' (e1' [;] e2)
- | if_sem_3: forall phi b e1 e2, simp_bexp b = None -> prog_sem phi (IFa b e1 e2) 1 phi (IFa b e1 e2)
  | if_sem_1 : forall phi b e1 e2, simp_bexp b = Some true -> prog_sem phi (IFa b e1 e2) 1 phi e1
  | if_sem_2 : forall phi b e1 e2, simp_bexp b = Some false -> prog_sem phi (IFa b e1 e2) 1 phi e2
  | new_sem : forall phi bl, prog_sem phi (New bl) 1 (add_new phi bl) ESKIP
