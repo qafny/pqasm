@@ -221,10 +221,6 @@ Proof.
   apply IHityping1. easy.
 Qed.
 
-Axiom disjoint_record_elem : forall s T, disjoint_record (s::T) -> disjoint_record ([s]).
-
-Axiom disjoint_record_tl : forall s T, disjoint_record (s::T) -> disjoint_record (T).
-
 Lemma rec_union_same : forall a b c d e f, a ++ b ++ c = d ++ e ++ f -> rec_union (a,b,c) = rec_union (d,e,f).
 Proof.
   intros.
@@ -601,17 +597,6 @@ Proof.
   simpl in *.
   rewrite IHQ. easy.
 Qed.
-
-Lemma type_consist_add_had: forall n m a qs T phi, n <= m -> 
-   disjoint_record (([], a :: qs, []) :: T) ->
-   (forall i : nat, i < m -> type_consist_eta ((qs, [], []) :: T) (snd (snd (apply_hads phi qs) i))) ->
-   (forall i, i < n + m 
-      -> type_consist_eta ((a :: qs, [], []) :: T) (snd (add_had' n m (snd (apply_hads phi qs)) a i))).
-Proof.
-  induction n; intros; simpl in *.
-  apply H1 in H2.
-  unfold type_consist_eta in *. intros.
-Admitted.
 
 
 Lemma type_preservation:
