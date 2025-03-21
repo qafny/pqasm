@@ -144,7 +144,12 @@ Module Simple.
 
 End Simple.
 
+(*
+QuickChick (Simple.uniform_correct 8). 
+*)
+
 QuickChick (Simple.uniform_correct 60). 
+
 
 Definition exp_comparison (e1 e2: exp): bool :=
   match e1 with 
@@ -399,9 +404,9 @@ QuickChick (ModExpState.mod_exp_state_correct).
 
 Module DistinctElements.
 
-  Definition state_qubits := 60.
+  Definition state_qubits := 8.
 
-  Definition dis_state := 2.
+  Definition dis_state := 5.
 
   Definition qvars : list posi := (lst_posi state_qubits z_var)++((y_var,0)::(lst_posi (dis_state * state_qubits) x_var)).
 
@@ -420,32 +425,35 @@ Module DistinctElements.
      end.
   Fixpoint repeat_qapp' (n:nat) :=
     match n with 0 => ESKIP
-               | S m => repeat_qapp_aux m n [;] repeat_qapp' m
+               | S m => repeat_qapp_aux m m [;] repeat_qapp' m
     end.
-  Definition repeat_qapp := repeat_qapp' (dis_state-1).
+  Definition repeat_qapp := repeat_qapp' (dis_state).
 
   Definition distinct_element_state := repeat_qapp [;] 
     Meas u_var (lst_posi state_qubits z_var) (IFa (CEq z_var (Num 0)) ESKIP ESKIP).
+
+  Definition b2nat (b:bool) := if b then 1 else 0.
   
   Fixpoint distinct_state_aux (n j:nat) (st:eta_state):=
-      match n with 0 => true
-                | S m => negb ((a_nat2fb (posi_list_to_bitstring (lst_posi_q m x_var) st) state_qubits)
+      match n with 0 => 0
+                | S m => b2nat ((a_nat2fb (posi_list_to_bitstring (lst_posi_q m x_var) st) state_qubits)
                  =? (a_nat2fb (posi_list_to_bitstring (lst_posi_q j x_var) st) state_qubits))
-                         && distinct_state_aux m j st
+                         + distinct_state_aux m j st
       end.
    Fixpoint distinct_state_right' (n:nat) (st:eta_state):=
-      match n with 0 => true
-                 | S m => distinct_state_aux m n st && distinct_state_right' m st
+      match n with 0 => 0
+                 | S m => distinct_state_aux m m st + distinct_state_right' m st
       end.
-   Definition distinct_state_right (st:eta_state) := distinct_state_right' (dis_state-1) st.
+   Definition distinct_state_right (st:eta_state) := distinct_state_right' (dis_state) st.
 
 
   Definition distinct_elem_test_eq (e:exp) (v:nat) := 
     let (env,qstate) := prog_sem_fix state_qubits e (init_env,(qvars,bv2Eta state_qubits x_var v)) in
-       distinct_state_right (snd qstate).
+       env u_var =? distinct_state_right (snd qstate).
 
   Conjecture distinct_elem_state_correct:
-    forall (vx : nat), distinct_elem_test_eq (distinct_element_state) vx = true.
+    forall (vx:nat), vx < 2 ^ (state_qubits * dis_state) 
+          -> distinct_elem_test_eq distinct_element_state vx = true.
 
 End DistinctElements.
 

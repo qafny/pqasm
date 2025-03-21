@@ -202,18 +202,18 @@ Definition mu_addition (ps: list posi) (n:(nat)) (st: eta_state): (nat-> bool) :
                    | _ => false
       end.
 Definition mu_less (ps: list posi) (n:(nat)) (st: eta_state) (q:posi) := 
-  match st q with Nval j => st[q |-> Nval (j && (a_nat2fb (posi_list_to_bitstring ps st) (length ps) <? n))]
+  match st q with Nval j => st[q |-> Nval (xorb j (a_nat2fb (posi_list_to_bitstring ps st) (length ps) <? n))]
                 | Rval f => st
   end.
 
 Definition mu_eq (ps: list posi) (n:(nat)) (st: eta_state) (q:posi) := 
-  match st q with Nval j => st[q |-> Nval (j && (a_nat2fb (posi_list_to_bitstring ps st) (length ps) =? n))]
+  match st q with Nval j => st[q |-> Nval (xorb j (a_nat2fb (posi_list_to_bitstring ps st) (length ps) =? n))]
                 | Rval f => st
   end.
 
 Definition mu_full_eq (ps qs: list posi) (st: eta_state) (q:posi) := 
-  match st q with Nval j => st[q |-> Nval (j && 
-                (a_nat2fb (posi_list_to_bitstring ps st) (length ps) =? a_nat2fb (posi_list_to_bitstring ps st) (length qs)))]
+  match st q with Nval j => st[q |-> Nval (xorb j 
+                (a_nat2fb (posi_list_to_bitstring ps st) (length ps) =? a_nat2fb (posi_list_to_bitstring qs st) (length qs)))]
                 | Rval f => st
   end.
 
