@@ -65,6 +65,7 @@ Fixpoint exp_elim (p:exp) :=
                   end
   | _ => p
   end.
+Check exp_elim.
 
 Definition Z (p:posi) := RZ 1 p.
 
@@ -198,7 +199,7 @@ Definition exchange (v: val) :=
                   | a => a
      end.
 
-Fixpoint lshift' (n:nat) (size:nat) (f:posi -> val) (x:var) := 
+(* Fixpoint lshift' (n:nat) (size:nat) (f:posi -> val) (x:var) := 
    match n with 0 => f[(x,0) |-> f(x,size)]
              | S m => ((lshift' m size f x)[ (x,n) |-> f(x,m)])
    end.
@@ -208,7 +209,7 @@ Fixpoint rshift' (n:nat) (size:nat) (f:posi -> val) (x:var) :=
    match n with 0 => f[(x,size) |-> f(x,0)]
              | S m => ((rshift' m size f x)[(x,m) |-> f (x,n)])
    end.
-Definition rshift (f:posi -> val) (x:var) (n:nat) := rshift' (n-1) (n-1) f x.
+Definition rshift (f:posi -> val) (x:var) (n:nat) := rshift' (n-1) (n-1) f x. *)
 
 (*
 Inductive varType := SType (n1:nat) (n2:nat).
@@ -245,7 +246,7 @@ Definition up_qft (v:val) (f:nat -> bool) :=
               | a => a
    end.
 
-Definition lshift_fun (f:nat -> bool) (n:nat) := fun i => f (i+n).
+(* Definition lshift_fun (f:nat -> bool) (n:nat) := fun i => f (i+n). *)
 
 (*A function to get the rotation angle of a state. *)
 Definition get_r (v:val) :=
@@ -254,10 +255,10 @@ Definition get_r (v:val) :=
    end.
 
 
-Fixpoint assign_r (f:posi -> val) (x:var) (r : nat -> bool) (n:nat) := 
+(* Fixpoint assign_r (f:posi -> val) (x:var) (r : nat -> bool) (n:nat) := 
     match n with 0 => f
               | S m => (assign_r f x r m)[(x,m) |-> up_qft (f (x,m)) (lshift_fun r m)]
-    end.
+    end. *)
 
 Definition up_h (v:val)  :=
    match v with nval true r => qval r (rotate allfalse 1)
@@ -270,8 +271,8 @@ Fixpoint assign_h (f:posi -> val) (x:var) (n:nat) (i:nat) :=
           | S m => (assign_h f x n m)[(x,n+m) |-> up_h (f (x,n+m))]
   end.
 
-Definition turn_qft (st : posi -> val) (x:var) (b:nat) (rmax : nat) := 
-       assign_h (assign_r st x (get_cus b st x) b) x b (rmax - b).
+(* Definition turn_qft (st : posi -> val) (x:var) (b:nat) (rmax : nat) := 
+       assign_h (assign_r st x (get_cus b st x) b) x b (rmax - b). *)
 
 
 (* Semantic function for RQFT gate. *)
@@ -295,7 +296,7 @@ Definition turn_rqft (st : posi -> val) (x:var) (b:nat) (rmax : nat) :=
 
 
 (* This is the semantics for basic gate set of the language. *)
-Fixpoint exp_sem (env:var -> nat) (e:exp) (st: posi -> val) : (posi -> val) :=
+(* Fixpoint exp_sem (env:var -> nat) (e:exp) (st: posi -> val) : (posi -> val) :=
    match e with (SKIP p) => st
               | X p => (st[p |-> (exchange (st p))])
               | CU p e' => if get_cua (st p) then exp_sem env e' st else st
@@ -306,7 +307,7 @@ Fixpoint exp_sem (env:var -> nat) (e:exp) (st: posi -> val) : (posi -> val) :=
                | QFT x b => turn_qft st x b (env x)
                | RQFT x b => turn_rqft st x b (env x)
               | e1 ; e2 => exp_sem env e2 (exp_sem env e1 st)
-    end.
+    end. *)
 
 
 Definition or_not_r (x y:var) (n1 n2:nat) := x <> y \/ n1 < n2.
@@ -435,9 +436,9 @@ Definition nor_modes (f:posi -> val) (x:var) (n:nat) :=
 Definition get_snd_r (f:posi -> val) (p:posi) :=
     match (f p) with qval rc r => r | _ => allfalse end.
 
-Definition qft_uniform (aenv: var -> nat) (tenv:env) (f:posi -> val) :=
+(* Definition qft_uniform (aenv: var -> nat) (tenv:env) (f:posi -> val) :=
    forall x b, Env.MapsTo x (Phi b) tenv -> 
-             (forall i, i < b -> get_snd_r f (x,i) = (lshift_fun (get_r_qft f x) i)).
+             (forall i, i < b -> get_snd_r f (x,i) = (lshift_fun (get_r_qft f x) i)). *)
 
 Definition qft_gt (aenv: var -> nat) (tenv:env) (f:posi -> val) :=
    forall x b, Env.MapsTo x (Phi b) tenv -> (forall i,0 < b <= i -> get_r_qft f x i = false)
