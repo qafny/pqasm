@@ -1,12 +1,10 @@
 Require Import Reals.
 Require Import Psatz.
-Require Import SQIR.
-Require Import VectorStates UnitaryOps Coq.btauto.Btauto Coq.NArith.Nnat. 
-Require Import Dirac.
-Require Import QPE.
+Require Import Coq.btauto.Btauto Coq.NArith.Nnat Coq.Lists.List.
 Require Import BasicUtility.
 Require Import MathSpec.
 Require Import Classical_Prop.
+Import ListNotations.
 (**********************)
 (** Unitary Programs **)
 (**********************)
@@ -19,7 +17,6 @@ Local Open Scope nat_scope.
 (* irrelavent vars. *)
 Definition vars_neq (l:list var) := forall n m x y,
    nth_error l m = Some x ->  nth_error l n = Some y -> n <> m -> x <> y.
-
 
 Inductive exp := SKIP (p:posi) | X (p:posi) | CU (p:posi) (e:exp)
         | RZ (q:nat) (p:posi) (* 2 * PI * i / 2^q *)
@@ -34,21 +31,6 @@ Inductive exp := SKIP (p:posi) | X (p:posi) | CU (p:posi) (e:exp)
         | Seq (s1:exp) (s2:exp).
 
 Inductive type := Had (b:nat) | Phi (b:nat) | Nor.
-
-(* Fixpoint greenberger_horne_zeilinger (p: list of qubits) :=
-   match p with 
-   | nil => _
-   | a::b => Nor
-   end. 
-   May need a second function to allow Hadamard gate to be applied to the first qubit*)
-
-(*For Hamming weight, first perform biased Hadamard transform, second perform quantum addition *)
-
-(*For preparing a state that is a superposition of the binary representation of all integers from 
-0 to N (less than, sum_j |j> |j < N>) we'd need something like the quantum fourier transform
-or use the procedure with the H, controlled H, and R y gates*)
-
-(* for preparing a superposition of permutations, many controlled swap gates*)
 
 Notation "p1 ; p2" := (Seq p1 p2) (at level 50) : exp_scope.
 
@@ -65,7 +47,6 @@ Fixpoint exp_elim (p:exp) :=
                   end
   | _ => p
   end.
-Check exp_elim.
 
 Definition Z (p:posi) := RZ 1 p.
 
@@ -85,7 +66,6 @@ Fixpoint inv_exp p :=
   | Seq p1 p2 => inv_exp p2; inv_exp p1
    end.
 
-
 Fixpoint GCCX' x n size :=
   match n with
   | O | S O => X (x,n - 1)
@@ -98,47 +78,6 @@ Fixpoint nX x n :=
             | S m => X (x,m); nX x m
    end.
 
-(* Grover diffusion operator. *)
-(*
-Definition diff_half (x c:var) (n:nat) := H x ; H c ;  ((nX x n; X (c,0))). 
-
-Definition diff_1 (x c :var) (n:nat) :=
-  diff_half x c n ; ((GCCX x n)) ; (inv_exp (diff_half x c n)).
-*)
-(*The second implementation of grover's diffusion operator.
-  The whole circuit is a little different, and the input for the diff_2 circuit is asssumed to in Had mode. *)
-(*
-Definition diff_2 (x c :var) (n:nat) :=
-  H x ; ((GCCX x n)) ; H x.
-
-Fixpoint is_all_true C n :=
-  match n with 0 => true
-           | S m => C m && is_all_true C m
-  end.
-
-Definition const_u (C :nat -> bool) (n:nat) c := if is_all_true C n then ((X (c,0))) else SKIP (c,0).
-
-Fixpoint niter_prog n (c:var) (P : exp) : exp :=
-  match n with
-  | 0    => SKIP (c,0)
-  | 1    => P
-  | S n' => niter_prog n' c P ; P
-  end.
-
-Definition body (C:nat -> bool) (x c:var) (n:nat) := const_u C n c; diff_2 x c n.
-
-Definition grover_e (i:nat) (C:nat -> bool) (x c:var) (n:nat) := 
-        H x; H c ; ((Z (c,0))) ; niter_prog i c (body C x c n).
-*)
-(** Definition of Deutsch-Jozsa program. **)
-(*
-Definition deutsch_jozsa (x c:var) (n:nat) :=
-  ((nX x n; X (c,0))) ; H x ; H c ; ((X (c,0))); H c ; H x.
-*)
-
-
-(* H; CR; ... Had(0)  H (1) Had(1) ; CR; H(2);; CR. *)
-
 Require Import Coq.FSets.FMapList.
 Require Import Coq.FSets.FMapFacts.
 Require Import Coq.Structures.OrderedTypeEx.
@@ -148,14 +87,12 @@ Module EnvFacts := FMapFacts.Facts (Env).
 Definition env := Env.t type.
 Definition empty_env := @Env.empty type.
 
-
 (* Defining program semantic functions. *)
 Definition put_cu (v:val) (b:bool) :=
     match v with nval x r => nval b r | a => a end.
 
 Definition get_cua (v:val) := 
     match v with nval x r => x | _ => false end.
-
 
 Lemma double_put_cu : forall (f:posi -> val) x v v', put_cu (put_cu (f x) v) v' = put_cu (f x) v'.
 Proof.
@@ -193,42 +130,10 @@ Fixpoint srr_rotate' (st: posi -> val) (x:var) (n:nat) (size:nat) :=
    end.
 Definition srr_rotate st x n := srr_rotate' st x (S n) (S n).
 
-
 Definition exchange (v: val) :=
-     match v with nval b r => nval (¬ b) r
+     match v with nval b r => nval (negb b) r
                   | a => a
      end.
-
-(* Fixpoint lshift' (n:nat) (size:nat) (f:posi -> val) (x:var) := 
-   match n with 0 => f[(x,0) |-> f(x,size)]
-             | S m => ((lshift' m size f x)[ (x,n) |-> f(x,m)])
-   end.
-Definition lshift (f:posi -> val) (x:var) (n:nat) := lshift' (n-1) (n-1) f x.
-
-Fixpoint rshift' (n:nat) (size:nat) (f:posi -> val) (x:var) := 
-   match n with 0 => f[(x,size) |-> f(x,0)]
-             | S m => ((rshift' m size f x)[(x,m) |-> f (x,n)])
-   end.
-Definition rshift (f:posi -> val) (x:var) (n:nat) := rshift' (n-1) (n-1) f x. *)
-
-(*
-Inductive varType := SType (n1:nat) (n2:nat).
-
-Definition inter_env (enva: var -> nat) (x:var) :=
-             match  (enva x) with SType n1 n2 => n1 + n2 end.
-*)
-(*
-Definition hexchange (v1:val) (v2:val) :=
-  match v1 with hval b1 b2 r1 => 
-    match v2 with hval b3 b4 r2 => if eqb b3 b4 then v1 else hval b1 (¬ b2) r1
-                | _ => v1
-    end
-             | _ => v1
-  end.
-*)
-
-Definition reverse (f:posi -> val) (x:var) (n:nat) := fun (a: var * nat) =>
-             if ((fst a) =? x) && ((snd a) <? n) then f (x, (n-1) - (snd a)) else f a.
 
 (* Semantics function for QFT gate. *)
 Definition seq_val (v:val) :=
@@ -246,19 +151,11 @@ Definition up_qft (v:val) (f:nat -> bool) :=
               | a => a
    end.
 
-(* Definition lshift_fun (f:nat -> bool) (n:nat) := fun i => f (i+n). *)
-
 (*A function to get the rotation angle of a state. *)
 Definition get_r (v:val) :=
    match v with nval x r => r
               | qval rc r => rc
    end.
-
-
-(* Fixpoint assign_r (f:posi -> val) (x:var) (r : nat -> bool) (n:nat) := 
-    match n with 0 => f
-              | S m => (assign_r f x r m)[(x,m) |-> up_qft (f (x,m)) (lshift_fun r m)]
-    end. *)
 
 Definition up_h (v:val)  :=
    match v with nval true r => qval r (rotate allfalse 1)
@@ -270,10 +167,6 @@ Fixpoint assign_h (f:posi -> val) (x:var) (n:nat) (i:nat) :=
    match i with 0 => f
           | S m => (assign_h f x n m)[(x,n+m) |-> up_h (f (x,n+m))]
   end.
-
-(* Definition turn_qft (st : posi -> val) (x:var) (b:nat) (rmax : nat) := 
-       assign_h (assign_r st x (get_cus b st x) b) x b (rmax - b). *)
-
 
 (* Semantic function for RQFT gate. *)
 Fixpoint assign_seq (f:posi -> val) (x:var) (vals : nat -> bool) (n:nat) := 
@@ -294,9 +187,8 @@ Definition get_r_qft (f:posi -> val) (x:var) :=
 Definition turn_rqft (st : posi -> val) (x:var) (b:nat) (rmax : nat) := 
            assign_h_r (assign_seq st x (get_r_qft st x) b) x b (rmax - b).
 
-
 (* This is the semantics for basic gate set of the language. *)
-(* Fixpoint exp_sem (env:var -> nat) (e:exp) (st: posi -> val) : (posi -> val) :=
+Fixpoint exp_sem (env:var -> nat) (e:exp) (st: posi -> val) : (posi -> val) :=
    match e with (SKIP p) => st
               | X p => (st[p |-> (exchange (st p))])
               | CU p e' => if get_cua (st p) then exp_sem env e' st else st
@@ -304,17 +196,14 @@ Definition turn_rqft (st : posi -> val) (x:var) (b:nat) (rmax : nat) :=
               | RRZ q p => (st[p |-> times_r_rotate (st p) q])
               | SR n x => sr_rotate st x n (*n is the highest position to rotate. *)
               | SRR n x => srr_rotate st x n
-               | QFT x b => turn_qft st x b (env x)
                | RQFT x b => turn_rqft st x b (env x)
               | e1 ; e2 => exp_sem env e2 (exp_sem env e1 st)
-    end. *)
-
+              | _ => st
+    end.
 
 Definition or_not_r (x y:var) (n1 n2:nat) := x <> y \/ n1 < n2.
 
 Definition or_not_eq (x y:var) (n1 n2:nat) := x <> y \/ n1 <= n2.
-
-
 
 Inductive exp_fresh (aenv:var->nat): posi -> exp -> Prop :=
       | skip_fresh : forall p p1, p <> p1 -> exp_fresh aenv p (SKIP p1)
@@ -435,10 +324,6 @@ Definition nor_modes (f:posi -> val) (x:var) (n:nat) :=
 
 Definition get_snd_r (f:posi -> val) (p:posi) :=
     match (f p) with qval rc r => r | _ => allfalse end.
-
-(* Definition qft_uniform (aenv: var -> nat) (tenv:env) (f:posi -> val) :=
-   forall x b, Env.MapsTo x (Phi b) tenv -> 
-             (forall i, i < b -> get_snd_r f (x,i) = (lshift_fun (get_r_qft f x) i)). *)
 
 Definition qft_gt (aenv: var -> nat) (tenv:env) (f:posi -> val) :=
    forall x b, Env.MapsTo x (Phi b) tenv -> (forall i,0 < b <= i -> get_r_qft f x i = false)
