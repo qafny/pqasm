@@ -18,7 +18,7 @@ Local Open Scope nat_scope.
 Definition vars_neq (l:list var) := forall n m x y,
    nth_error l m = Some x ->  nth_error l n = Some y -> n <> m -> x <> y.
 
-Inductive exp := SKIP (p:posi) | X (p:posi) | CU (p:posi) (e:exp)
+Inductive expr := SKIP (p:posi) | X (p:posi) | CU (p:posi) (e:expr)
         | RZ (q:nat) (p:posi) (* 2 * PI * i / 2^q *)
         | RRZ (q:nat) (p:posi) 
         | SR (q:nat) (x:var) (* a series of RZ gates for QFT mode from q down to b. *)
@@ -28,13 +28,13 @@ Inductive exp := SKIP (p:posi) | X (p:posi) | CU (p:posi) (e:exp)
         | RQFT (x:var) (b:nat)
        (* | H (p:posi) *)
        (* | H (x:posi)  H on x ; CR gates on everything within (size - b). *)
-        | Seq (s1:exp) (s2:exp).
+        | Seq (s1:expr) (s2:expr).
 
 Inductive type := Had (b:nat) | Phi (b:nat) | Nor.
 
 Notation "p1 ; p2" := (Seq p1 p2) (at level 50) : exp_scope.
 
-Fixpoint exp_elim (p:exp) :=
+Fixpoint exp_elim (p:expr) :=
   match p with
   | CU q p => match exp_elim p with
                  | SKIP a => SKIP a 
@@ -188,7 +188,7 @@ Definition turn_rqft (st : posi -> val) (x:var) (b:nat) (rmax : nat) :=
            assign_h_r (assign_seq st x (get_r_qft st x) b) x b (rmax - b).
 
 (* This is the semantics for basic gate set of the language. *)
-Fixpoint exp_sem (env:var -> nat) (e:exp) (st: posi -> val) : (posi -> val) :=
+Fixpoint exp_sem (env:var -> nat) (e:expr) (st: posi -> val) : (posi -> val) :=
    match e with (SKIP p) => st
               | X p => (st[p |-> (exchange (st p))])
               | CU p e' => if get_cua (st p) then exp_sem env e' st else st
@@ -205,7 +205,7 @@ Definition or_not_r (x y:var) (n1 n2:nat) := x <> y \/ n1 < n2.
 
 Definition or_not_eq (x y:var) (n1 n2:nat) := x <> y \/ n1 <= n2.
 
-Inductive exp_fresh (aenv:var->nat): posi -> exp -> Prop :=
+Inductive exp_fresh (aenv:var->nat): posi -> expr -> Prop :=
       | skip_fresh : forall p p1, p <> p1 -> exp_fresh aenv p (SKIP p1)
       | x_fresh : forall p p' , p <> p' -> exp_fresh aenv p (X p')
       | sr_fresh : forall p x n, or_not_r (fst p) x n (snd p) -> exp_fresh aenv p (SR n x)
@@ -229,7 +229,7 @@ Definition fst_not_opp (s:sexp) (l : list sexp) :=
               | (a::al) => s <> opp_ls a
    end.
 
-Inductive exp_neu_l (x:var) : list sexp -> exp ->  list sexp -> Prop :=
+Inductive exp_neu_l (x:var) : list sexp -> expr ->  list sexp -> Prop :=
       | skip_neul : forall l p, exp_neu_l x l (SKIP p) l
       | x_neul : forall l p,  exp_neu_l x l (X p) l
       | sr_neul : forall l y n, exp_neu_l x l (SR n y) l
@@ -242,14 +242,14 @@ Inductive exp_neu_l (x:var) : list sexp -> exp ->  list sexp -> Prop :=
       | rqft_neul : forall l y b, exp_neu_l x l (RQFT y b) l
       | seq_neul : forall l l' l'' e1 e2, exp_neu_l x l e1 l' -> exp_neu_l x l' e2 l'' -> exp_neu_l x l (Seq e1 e2) l''.
 
-Definition exp_neu (xl : list var) (e:exp) : Prop :=
+Definition exp_neu (xl : list var) (e:expr) : Prop :=
     forall x, In x xl -> exp_neu_l x [] e [].
 
 Definition exp_neu_prop (l:list sexp) :=
     (forall i a, i + 1 < length l -> nth_error l i = Some a -> nth_error l (i+1) <> Some (opp_ls a)).
 
 (* Type System. *)
-Inductive well_typed_exp: env -> exp -> Prop :=
+Inductive well_typed_exp: env -> expr -> Prop :=
     | skip_refl : forall env, forall p, well_typed_exp env (SKIP p)
     | x_nor : forall env p, Env.MapsTo (fst p) Nor env -> well_typed_exp env (X p)
     (*| x_had : forall env p, Env.MapsTo (fst p) Had env -> well_typed_exp env (X p) *)
@@ -274,7 +274,7 @@ Fixpoint get_vars e : list var :=
               | Seq e1 e2 => get_vars e1 ++ (get_vars e2)
    end.
 
-Inductive well_typed_oexp (aenv: var -> nat) : env -> exp -> env -> Prop :=
+Inductive well_typed_oexp (aenv: var -> nat) : env -> expr -> env -> Prop :=
     | exp_refl : forall env e, 
                 well_typed_exp env e -> well_typed_oexp aenv env e env
     | qft_nor :  forall env env' x b, b <= aenv x -> 
@@ -288,7 +288,7 @@ Inductive well_typed_oexp (aenv: var -> nat) : env -> exp -> env -> Prop :=
     | pe_seq : forall env env' env'' e1 e2, well_typed_oexp aenv env e1 env' -> 
                  well_typed_oexp aenv env' e2 env'' -> well_typed_oexp aenv env (e1 ; e2) env''.
 
-Inductive exp_WF (aenv:var -> nat): exp -> Prop :=
+Inductive exp_WF (aenv:var -> nat): expr -> Prop :=
       | skip_wf : forall p, snd p < aenv (fst p) -> exp_WF aenv (SKIP p)
       | x_wf : forall p, snd p < aenv (fst p)  -> exp_WF aenv  (X p)
       | cu_wf : forall p e, snd p < aenv (fst p)  -> exp_WF aenv  e -> exp_WF aenv  (CU p e)
