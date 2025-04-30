@@ -4,6 +4,11 @@ Require Import Coq.btauto.Btauto Coq.NArith.Nnat Coq.Lists.List.
 Require Import BasicUtility.
 Require Import MathSpec.
 Require Import Classical_Prop.
+Require Import Dirac.
+Require Import PQASM.
+Require Import RZArith.
+Require Import CLArith.
+Require Import SQIR.
 Import ListNotations.
 (**********************)
 (** Unitary Programs **)
@@ -18,7 +23,7 @@ Local Open Scope nat_scope.
 Definition vars_neq (l:list var) := forall n m x y,
    nth_error l m = Some x ->  nth_error l n = Some y -> n <> m -> x <> y.
 
-Inductive expr := SKIP (p:posi) | X (p:posi) | CU (p:posi) (e:expr)
+Inductive expr := SKIP (p:posi) | X (p:posi) | CUexpr (p:posi) (e:expr)
         | RZ (q:nat) (p:posi) (* 2 * PI * i / 2^q *)
         | RRZ (q:nat) (p:posi) 
         | SR (q:nat) (x:var) (* a series of RZ gates for QFT mode from q down to b. *)
@@ -28,8 +33,86 @@ Inductive expr := SKIP (p:posi) | X (p:posi) | CU (p:posi) (e:expr)
         | RQFT (x:var) (b:nat)
        (* | H (p:posi) *)
        (* | H (x:posi)  H on x ; CR gates on everything within (size - b). *)
-        | Seq (s1:expr) (s2:expr).
+        | Seq (s1:expr) (s2:expr)
+        (* | Hadamard (* need to link with hadamard method in Quantum.vexternals/SQIR/externals/QWIRE/Quantum.v*)
+        | Measr link to meas_op in Quantum.v? *)
+         .
+Definition vars := nat -> (nat * nat * (nat -> nat) * (nat -> nat)).
+Definition start (vs :vars) (x:var) := fst (fst (fst (vs x))).
+Definition vmap (vs:vars) (x:var) := snd (fst (vs x)).
+Definition rz_ang (n:nat) : R := ((2%R * PI)%R / 2%R^n).
+Definition rrz_ang (n:nat) : R := ((2%R * PI)%R - ((2%R * PI)%R / 2%R^n)).
+Definition find_pos (f : vars) (p:posi) :=
+      let (a,b) := p in start f a + (vmap f a b).
+      Fixpoint gen_sr_gate' (f:vars) (dim:nat) (x:var) (n:nat) (size:nat) : base_ucom dim := 
+         match n with 0 => SQIR.ID (find_pos f (x,0))
+                   | S m => SQIR.useq (gen_sr_gate' f dim x m size) (SQIR.Rz (rz_ang (size - m)) (find_pos f (x,m)))
+         end.
+      Definition gen_sr_gate (f:vars) (dim:nat) (x:var) (n:nat) := gen_sr_gate' f dim x (S n) (S n).
+      Fixpoint gen_srr_gate' (f:vars) (dim:nat) (x:var) (n:nat) (size:nat) : base_ucom dim := 
+   match n with 0 => SQIR.ID (find_pos f (x,0))
+             | S m => SQIR.useq (gen_srr_gate' f dim x m size) (SQIR.Rz (rrz_ang (size - m)) (find_pos f (x,m)))
+   end.
+Definition gen_srr_gate (f:vars) (dim:nat) (x:var) (n:nat) := gen_srr_gate' f dim x (S n) (S n).
+Fixpoint nH (f : vars) (dim:nat) (x:var) (n:nat) (b:nat) : base_ucom dim :=
+     match n with 0 => SQIR.ID (find_pos f (x,0))
+               | S m => SQIR.useq (nH f dim x m b) (SQIR.H (find_pos f (x,b+m))) 
+     end.
+     Definition vsize (vs:vars) (x:var) := snd (fst (fst (vs x))).
+     Fixpoint controlled_rotations_gen (f : vars) (dim:nat) (x:var) (n : nat) (i:nat) : base_ucom dim :=
+  match n with
+  | 0 | 1 => SQIR.ID (find_pos f (x,i))
+  | S m  => SQIR.useq (controlled_rotations_gen f dim x m i)
+                 (SQIR.UnitaryOps.control (find_pos f (x,m+i)) (SQIR.Rz (rz_ang n) (find_pos f (x,i))))
+  end.
+     Fixpoint QFT_gen (f : vars) (dim:nat) (x:var) (n : nat) (size:nat) : base_ucom dim :=
+      match n with
+      | 0    => SQIR.ID (find_pos f (x,0))
+      | S m => SQIR.useq  (QFT_gen f dim x m size)
+                 (SQIR.useq (SQIR.H (find_pos f (x,m))) ((controlled_rotations_gen f dim x (size-m) m)))
+      end.
+Definition trans_qft (f:vars) (dim:nat) (x:var) (b:nat) : base_ucom dim :=
+         SQIR.useq (QFT_gen f dim x b b) (nH f dim x (vsize f x - b) b).
 
+Definition trans_rqft (f:vars) (dim:nat) (x:var) (b:nat) : base_ucom dim :=
+   SQIR.UnitaryOps.invert (SQIR.useq (QFT_gen f dim x b b) (nH f dim x (vsize f x - b) b)).
+
+Fixpoint trans_exp (f : vars) (dim:nat) (exp:expr) (avs: nat -> posi) : (base_ucom dim * vars  * (nat -> posi)) :=
+   match exp with SKIP p => (SQIR.ID (find_pos f p), f, avs)
+               | X p => (SQIR.X (find_pos f p), f, avs)
+               | RZ q p => (SQIR.Rz (rz_ang q) (find_pos f p), f, avs)
+               | RRZ q p => (SQIR.Rz (rrz_ang q) (find_pos f p), f, avs)
+               | SR n x => (gen_sr_gate f dim x n, f, avs)
+               | SRR n x => (gen_srr_gate f dim x n, f, avs)
+               (*| HCNOT p1 p2 => (SQIR.CNOT (find_pos f p1) (find_pos f p2), f, avs) *)
+               | QFT x b => (trans_qft f dim x b, f, avs)
+               | RQFT x b => (trans_rqft f dim x b, f, avs)
+            (*   | H x => (trans_h f dim x, f, avs) *)
+               | CUexpr p e1 => match trans_exp f dim e1 avs with (e1', f',avs')
+                                 => (SQIR.UnitaryOps.control (find_pos f p) e1', f, avs) end
+               | Seq e1  e2 => match trans_exp f dim e1 avs with (e1', f', avs') => 
+                                    match trans_exp f' dim e2 avs' with (e2',f'',avs'') => (SQIR.useq e1' e2', f'', avs'') end
+                              end
+      end.
+(* Fixpoint exp_compile (e: exp) (po: posi): expr :=
+   match e with
+   | ESKIP =>  SKIP po
+   | Next p => exp_compile p po
+   | Had b => Hadamard
+   | New b => exp_compile b
+   | ESeq k m => Seq exp_compile k exp_compile m
+   | Meas x qs e1 => Measr
+   | IFa k op1 op2 => exp_compile op1 exp_compile op2
+   end. *)
+
+(* Fixpoint mu_compile (m: mu): expr :=
+match m with 
+| Add ps n => rz_adder
+| Less ps n p =>
+| Equal ps n p =>
+| ModMult ps n m => rz_modmult_full
+| Equal_posi_list ps qs p => 
+end.    *)
 Inductive type := Had (b:nat) | Phi (b:nat) | Nor.
 
 Notation "p1 ; p2" := (Seq p1 p2) (at level 50) : exp_scope.
