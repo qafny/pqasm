@@ -37,7 +37,7 @@ Notation "e0 [*] e1" := (AMult e0 e1) (at level 50) : exp_scope.
 
 Inductive cbexp := CEq (x:aexp) (y:aexp) | CLt (x:aexp) (y:aexp).
 
-Definition rz_val : Set := nat.
+Definition rz_val_PQASM : Set := nat.
 
 
 (* Defining the instruction level syntax, by abstracting away the detailed implementations of the quantum arithmetic operations. *)
@@ -49,7 +49,7 @@ Inductive mu := Add (ps: list posi) (n:(nat)) (* we add nat to the bitstring rep
               | ModMult (ps : list posi) (n:(nat)) (m: (nat))
               | Equal_posi_list (ps qs: list posi) (p:posi).
 
-Inductive iota:= ISeq (k: iota) (m: iota) | ICU (x:posi) (y:iota)| Ora (e:mu) | Ry (p: posi) (r: rz_val).
+Inductive iota:= ISeq (k: iota) (m: iota) | ICU (x:posi) (y:iota)| Ora (e:mu) | Ry (p: posi) (r: rz_val_PQASM).
 
 Coercion Ora : mu >-> iota.
 Notation "e0 ; e1" := (ISeq e0 e1) (at level 50) : exp_scope.
@@ -62,10 +62,6 @@ Inductive exp := ESKIP | Next (p: iota) | Had (b:list posi) | New (b:list posi)
 
 Coercion Next : iota >-> exp.
 Notation "e0 [;] e1" := (ESeq e0 e1) (at level 50) : exp_scope.
-
-
-
-
 
 (*true -> 1, false -> 0, rz_val : nat -> bool, a bitstring represented as booleans *)
 Inductive basis_val := Nval (b:bool) | Rval (n:nat).
@@ -109,11 +105,11 @@ Definition push_to_st (G: list posi) (f' : nat -> bool) (st: eta_state): eta_sta
 
 Definition pi32 (rmax:nat):= 2^(rmax-1) + 2^(rmax-2).
 
-Definition angle_sum (f g:rz_val) (rmax:nat) := (f + g) mod 2^rmax.
+Definition angle_sum (f g:rz_val_PQASM) (rmax:nat) := (f + g) mod 2^rmax.
 
-Definition angle_sub (f g: rz_val) (rmax:nat) := if f <? g then 2^rmax - (g - f) else f - g.
+Definition angle_sub (f g: rz_val_PQASM) (rmax:nat) := if f <? g then 2^rmax - (g - f) else f - g.
 
-Definition ry_rotate (st:eta_state) (p:posi) (r:rz_val) (rmax:nat): eta_state :=
+Definition ry_rotate (st:eta_state) (p:posi) (r:rz_val_PQASM) (rmax:nat): eta_state :=
    match st p with  Nval b2 => if b2 then st[ p |-> Rval (angle_sub (pi32 rmax) r rmax) ] else st[ p |-> Rval r]
                   |  Rval r1 => st[ p |-> Rval (angle_sum r1 r rmax)]
    end.
@@ -195,7 +191,7 @@ Definition mu_addition (ps: list posi) (n:(nat)) (st: eta_state): (nat-> bool) :
     | S m => mu_addition_reps ps (mu_addition ps n st) st m 
     end.
 *)
-  Definition rz_val_eq (rmax:nat) (x y : rz_val) := x mod 2^rmax =? y mod 2^rmax.
+  Definition rz_val_eq (rmax:nat) (x y : rz_val_PQASM) := x mod 2^rmax =? y mod 2^rmax.
   Definition basis_val_eq (rmax:nat) (x y : basis_val) :=
       match (x,y) with (Nval b, Nval b') => Bool.eqb b b'
                    | (Rval bl1, Rval bl2) => rz_val_eq rmax bl1 bl2

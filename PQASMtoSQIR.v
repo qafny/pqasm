@@ -6,7 +6,6 @@ Require Import MathSpec.
 Require Import Classical_Prop.
 Require Import Dirac.
 Require Import PQASM.
-Require Import RZArith.
 Require Import CLArith.
 Require Import SQIR.
 Import ListNotations.
@@ -14,9 +13,9 @@ Import ListNotations.
 (** Unitary Programs **)
 (**********************)
 
-Declare Scope exp_scope.
+(* Declare Scope exp_scope.
 Delimit Scope exp_scope with exp.
-Local Open Scope exp_scope.
+Local Open Scope exp_scope. *)
 Local Open Scope nat_scope.
 
 (* irrelavent vars. *)
@@ -89,16 +88,24 @@ Definition trans_rqft (f:vars) (dim:nat) (x:var) (b:nat) : base_ucom dim :=
                         match trans_exp f' dim e2 avs' with (e2',f'',avs'') => (SQIR.useq e1' e2', f'', avs'') end
                   end
       end. *)
+Definition posi_list_to_var  (ps : list posi) :=  var.
+Fixpoint rz_adder_new' (x:var) (n:nat) (size:nat) (M: nat -> bool) :=
+  match n with 
+  | 0 => SKIP (x,0)
+  | S m => Seq (rz_adder_new' x m size M) (if M m then SR (size - n) x else SKIP (x,m))
+  end.
 
-(* Fixpoint mu_compile (m: mu): option expr :=
+Definition rz_adder_new (x:var) (n:nat) (M:nat -> bool) := rz_adder_new' x n n M.
+
+Fixpoint mu_compile (m: mu): option expr :=
 match m with 
-| Add ps n => Some rz_adder ps n
+| Add ps n => Some (rz_adder_new (length ps) n (nat2fb n))
 | _ => None
 (* | Less ps n p => rz_compare x n p 
 | Equal ps n p => rz_compare x n p 
 | ModMult ps n m => rz_modmult_full y x n p m a b
 | Equal_posi_list ps qs p => rz_compare x n p  *)
-end.    *)
+end.   
 (* Fixpoint exp_compile (e: exp) (po: posi): expr :=
    match e with
    | ESKIP =>  SKIP po
@@ -116,9 +123,9 @@ Notation "p1 ; p2" := (Seq p1 p2) (at level 50) : exp_scope.
 
 Fixpoint exp_elim (p:expr) :=
   match p with
-  | CU q p => match exp_elim p with
+  | CUexpr q p => match exp_elim p with
                  | SKIP a => SKIP a 
-                 | p' => CU q p'
+                 | p' => CUexpr q p'
                  end
   | Seq p1 p2 => match exp_elim p1, exp_elim p2 with
                   | SKIP _, p2' => p2'
@@ -134,7 +141,7 @@ Fixpoint inv_exp p :=
   match p with
   | SKIP a => SKIP a
   | X n => X n
-  | CU n p => CU n (inv_exp p)
+  | CUexpr n p => CUexpr n (inv_exp p)
   | SR n x => SRR n x
   | SRR n x => SR n x
  (* | HCNOT p1 p2 => HCNOT p1 p2 *)
@@ -143,19 +150,19 @@ Fixpoint inv_exp p :=
   | QFT x b => RQFT x b
   | RQFT x b => QFT x b
   (*| H x => H x*)
-  | Seq p1 p2 => inv_exp p2; inv_exp p1
+  | Seq p1 p2 => Seq (inv_exp p2) (inv_exp p1)
    end.
 
 Fixpoint GCCX' x n size :=
   match n with
   | O | S O => X (x,n - 1)
-  | S m => CU (x,size-n) (GCCX' x m size)
+  | S m => CUexpr (x,size-n) (GCCX' x m size)
   end.
 Definition GCCX x n := GCCX' x n n.
 
 Fixpoint nX x n := 
    match n with 0 => X (x,0)
-            | S m => X (x,m); nX x m
+            | S m =>Seq (X (x,m)) (nX x m)
    end.
 
 Require Import Coq.FSets.FMapList.
@@ -271,13 +278,13 @@ Definition turn_rqft (st : posi -> val) (x:var) (b:nat) (rmax : nat) :=
 Fixpoint exp_sem (env:var -> nat) (e:expr) (st: posi -> val) : (posi -> val) :=
    match e with (SKIP p) => st
               | X p => (st[p |-> (exchange (st p))])
-              | CU p e' => if get_cua (st p) then exp_sem env e' st else st
+              | CUexpr p e' => if get_cua (st p) then exp_sem env e' st else st
               | RZ q p => (st[p |-> times_rotate (st p) q])
               | RRZ q p => (st[p |-> times_r_rotate (st p) q])
               | SR n x => sr_rotate st x n (*n is the highest position to rotate. *)
               | SRR n x => srr_rotate st x n
                | RQFT x b => turn_rqft st x b (env x)
-              | e1 ; e2 => exp_sem env e2 (exp_sem env e1 st)
+              | Seq e1 e2 => exp_sem env e2 (exp_sem env e1 st)
               | _ => st
     end.
 
@@ -290,7 +297,7 @@ Inductive exp_fresh (aenv:var->nat): posi -> expr -> Prop :=
       | x_fresh : forall p p' , p <> p' -> exp_fresh aenv p (X p')
       | sr_fresh : forall p x n, or_not_r (fst p) x n (snd p) -> exp_fresh aenv p (SR n x)
       | srr_fresh : forall p x n, or_not_r (fst p) x n (snd p) -> exp_fresh aenv p (SRR n x)
-      | cu_fresh : forall p p' e, p <> p' -> exp_fresh aenv p e -> exp_fresh aenv p (CU p' e)
+      | cu_fresh : forall p p' e, p <> p' -> exp_fresh aenv p e -> exp_fresh aenv p (CUexpr p' e)
      (* | cnot_fresh : forall p p1 p2, p <> p1 -> p <> p2 -> exp_fresh aenv p (HCNOT p1 p2) *)
       | rz_fresh : forall p p' q, p <> p' -> exp_fresh aenv p (RZ q p')
       | rrz_fresh : forall p p' q, p <> p' -> exp_fresh aenv p (RRZ q p')
@@ -314,7 +321,7 @@ Inductive exp_neu_l (x:var) : list sexp -> expr ->  list sexp -> Prop :=
       | x_neul : forall l p,  exp_neu_l x l (X p) l
       | sr_neul : forall l y n, exp_neu_l x l (SR n y) l
       | srr_neul : forall l y n, exp_neu_l x l (SRR n y) l
-      | cu_neul : forall l p e, exp_neu_l x [] e [] -> exp_neu_l x l (CU p e) l
+      | cu_neul : forall l p e, exp_neu_l x [] e [] -> exp_neu_l x l (CUexpr p e) l
       (*| hcnot_neul : forall l p1 p2, exp_neu_l x l (HCNOT p1 p2) l *)
       | rz_neul : forall l p q, exp_neu_l x l (RZ q p) l
       | rrz_neul : forall l p q, exp_neu_l x l (RRZ q p) l
@@ -343,7 +350,7 @@ Inductive well_typed_exp: env -> expr -> Prop :=
 Fixpoint get_vars e : list var :=
     match e with SKIP p => [(fst p)]
               | X p => [(fst p)]
-              | CU p e => (fst p)::(get_vars e)
+              | CUexpr p e => (fst p)::(get_vars e)
              (* | HCNOT p1 p2 => ((fst p1)::(fst p2)::[]) *)
               | RZ q p => ((fst p)::[])
               | RRZ q p => ((fst p)::[])
@@ -364,14 +371,14 @@ Inductive well_typed_oexp (aenv: var -> nat) : env -> expr -> env -> Prop :=
                Env.MapsTo x (Phi b) env -> Env.Equal env' (Env.add x Nor env) -> 
                  well_typed_oexp aenv env (RQFT x b) env'
     | pcu_nor : forall env p e, Env.MapsTo (fst p) Nor env -> exp_fresh aenv p e -> exp_neu (get_vars e) e ->
-                       well_typed_oexp aenv env e env -> well_typed_oexp aenv env (CU p e) env
+                       well_typed_oexp aenv env e env -> well_typed_oexp aenv env (CUexpr p e) env
     | pe_seq : forall env env' env'' e1 e2, well_typed_oexp aenv env e1 env' -> 
-                 well_typed_oexp aenv env' e2 env'' -> well_typed_oexp aenv env (e1 ; e2) env''.
+                 well_typed_oexp aenv env' e2 env'' -> well_typed_oexp aenv env (Seq e1 e2) env''.
 
 Inductive exp_WF (aenv:var -> nat): expr -> Prop :=
       | skip_wf : forall p, snd p < aenv (fst p) -> exp_WF aenv (SKIP p)
       | x_wf : forall p, snd p < aenv (fst p)  -> exp_WF aenv  (X p)
-      | cu_wf : forall p e, snd p < aenv (fst p)  -> exp_WF aenv  e -> exp_WF aenv  (CU p e)
+      | cu_wf : forall p e, snd p < aenv (fst p)  -> exp_WF aenv  e -> exp_WF aenv  (CUexpr p e)
     (*  | hcnot_wf : forall p1 p2, snd p1 < aenv (fst p1) 
                               -> snd p2 < aenv (fst p2)  -> exp_WF aenv  (HCNOT p1 p2) *)
       | rz_wf : forall p q, snd p < aenv (fst p)  -> exp_WF aenv  (RZ q p)
@@ -384,7 +391,7 @@ Inductive exp_WF (aenv:var -> nat): expr -> Prop :=
 
 Fixpoint init_v (n:nat) (x:var) (M: nat -> bool) :=
       match n with 0 => (SKIP (x,0))
-                | S m => if M m then init_v m x M; X (x,m) else init_v m x M
+                | S m => if M m then Seq (init_v m x M) (X (x,m)) else init_v m x M
       end.
 
 Inductive right_mode_val : type -> val -> Prop :=
