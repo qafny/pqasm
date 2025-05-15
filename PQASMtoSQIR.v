@@ -22,19 +22,21 @@ Local Open Scope nat_scope.
 Definition vars_neq (l:list var) := forall n m x y,
    nth_error l m = Some x ->  nth_error l n = Some y -> n <> m -> x <> y.
 
-Inductive expr := SKIP (p:posi) | X (p:posi) | CUexpr (p:posi) (e:expr)
-        | RZ (q:nat) (p:posi) (* 2 * PI * i / 2^q *)
-        | RRZ (q:nat) (p:posi) 
-        | SR (q:nat) (x:var) (* a series of RZ gates for QFT mode from q down to b. *)
-        | SRR (q:nat) (x:var) (* a series of RRZ gates for QFT mode from q down to b. *)
-        (*| HCNOT (p1:posi) (p2:posi) *)
-        | QFT (x:var) (b:nat) (* H on x ; CR gates on everything within (size - b). *)
-        | RQFT (x:var) (b:nat)
-       (* | H (p:posi) *)
-       (* | H (x:posi)  H on x ; CR gates on everything within (size - b). *)
-        | Seq (s1:expr) (s2:expr)
-        (* | Hadamard (* need to link with hadamard method in Quantum.vexternals/SQIR/externals/QWIRE/Quantum.v*)
-        | Measr link to meas_op in Quantum.v? *)
+Inductive expr := 
+      | SKIP (p:posi) | X (p:posi) 
+      | CUexpr (p:posi) (e:expr)
+      | RZ (q:nat) (p:posi) (* 2 * PI * i / 2^q *)
+      | RRZ (q:nat) (p:posi) 
+      | SR (q:nat) (x:var) (* a series of RZ gates for QFT mode from q down to b. *)
+      | SRR (q:nat) (x:var) (* a series of RRZ gates for QFT mode from q down to b. *)
+      (*| HCNOT (p1:posi) (p2:posi) *)
+      | QFT (x:var) (b:nat) (* H on x ; CR gates on everything within (size - b). *)
+      | RQFT (x:var) (b:nat)
+      (* | H (p:posi) *)
+      (* | H (x:posi)  H on x ; CR gates on everything within (size - b). *)
+      | Seq (s1:expr) (s2:expr)
+      (* | Hadamard (* need to link with hadamard method in Quantum.vexternals/SQIR/externals/QWIRE/Quantum.v*)
+      | Measr link to meas_op in Quantum.v? *)
          .
 Definition vars := nat -> (nat * nat * (nat -> nat) * (nat -> nat)).
 Definition start (vs :vars) (x:var) := fst (fst (fst (vs x))).
@@ -95,11 +97,74 @@ Fixpoint rz_adder_new' (x:var) (n:nat) (size:nat) (M: nat -> bool) :=
   | S m => Seq (rz_adder_new' x m size M) (if M m then SR (size - n) x else SKIP (x,m))
   end.
 
+Fixpoint inv_exp p :=
+  match p with
+  | SKIP a => SKIP a
+  | X n => X n
+  | CUexpr n p => CUexpr n (inv_exp p)
+  | SR n x => SRR n x
+  | SRR n x => SR n x
+ (* | HCNOT p1 p2 => HCNOT p1 p2 *)
+  | RZ q p1 => RRZ q p1
+  | RRZ q p1 => RZ q p1
+  | QFT x b => RQFT x b
+  | RQFT x b => QFT x b
+  (*| H x => H x*)
+  | Seq p1 p2 => Seq (inv_exp p2) (inv_exp p1)
+   end.
+Notation "p1 ; p2" := (Seq p1 p2) (at level 50) : exp_scope.
 Definition rz_adder_new (x:var) (n:nat) (M:nat -> bool) := rz_adder_new' x n n M.
+Fixpoint rz_sub_new' (x:var) (n:nat) (size:nat) (M: nat -> bool) :=
+  match n with 
+  | 0 => SKIP (x,0)
+  | S m => Seq (rz_sub_new' x m size M) (if M m then SRR (size - n) x else SKIP (x,m))
+  end.
 
-Fixpoint mu_compile (m: mu): option expr :=
+Definition rz_sub_new (x:var) (n:nat) (M:nat -> bool) := rz_sub_new' x n n M.
+Definition CNOT (x y : posi) := CUexpr x (X y).
+Definition rz_compare_half_new (x:var) (n:nat) (c:posi) (M:nat) := 
+   Seq (rz_sub_new x n (nat2fb M)) (Seq (RQFT x n) (CNOT (x,0) c)).
+
+Definition rz_compare_new (x:var) (n:nat) (c:posi) (M:nat) := 
+ Seq (rz_compare_half_new x n c M) (inv_exp ( Seq (rz_sub_new x n (nat2fb M)) (RQFT x n))).
+
+Definition one_cu_adder (x:var) (n:nat) (c:posi) (M:nat -> bool) := CUexpr c (rz_adder_new x n M).
+
+Definition qft_cu (x:var) (c:posi) (n:nat) := 
+  Seq(RQFT x n) (Seq (CNOT (x,0) c) (QFT x n)).
+
+Definition qft_acu (x:var) (c:posi) (n:nat) := 
+  Seq (RQFT x n)  (Seq (X (x,0))  (Seq (CNOT (x,0) c)  (Seq (X (x,0))  (QFT x n)))).
+
+Definition mod_adder_half (x:var) (n:nat) (c:posi) (A:nat -> bool) (M:nat -> bool) :=
+   Seq (Seq (rz_adder_new x n A) (rz_sub_new x n M))  (Seq (qft_cu x c n)  (one_cu_adder x n c M)).
+
+Definition clean_hbit (x:var) (n:nat) (c:posi) (M:nat -> bool) := 
+   Seq (rz_sub_new x n M) (Seq (qft_acu x c n) ( inv_exp (rz_sub_new x n M))).
+
+Definition mod_adder (x:var) (n:nat) (c:posi) (A:nat -> bool) (M:nat -> bool) :=
+  Seq (mod_adder_half x n c A M) (clean_hbit x n c A).
+
+(* modular multiplier: takes [x][0] -> [x][ax%N] where a and N are constant. *)
+Fixpoint rz_modmult_new' (y:var) (x:var) (n:nat) (size:nat) (c:posi) (A:nat) (M:nat) :=
+   match n with
+   | 0 =>  (SKIP (y,0))
+   | S m => Seq (rz_modmult_new' y x m size c A M)
+           (CUexpr (x,size - n) (mod_adder y size c (nat2fb ((2^m * A) mod M)) (nat2fb M)))
+   end.
+
+Definition rz_modmult_half y x size c A M := 
+  Seq (QFT y size) (Seq (rz_modmult_new' y x size size c A M)  (RQFT y size)).
+
+Definition rz_modmult_full (y:var) (x:var) (n:nat) (c:posi) (A:nat) (Ainv :nat) (N:nat) :=
+  Seq (rz_modmult_half y x n c A N) (inv_exp (rz_modmult_half x y n c Ainv N)).
+
+Definition mu_compile (m: mu): option expr :=
 match m with 
 | Add ps n => Some (rz_adder_new (length ps) n (nat2fb n))
+| Less ps n p => Some (rz_compare_new (length ps) n p n)
+| Equal ps n p => Some (rz_compare_new (length ps) n p n)
+(* | ModMult ps n m => Some (rz_modmult_full (length ps) (length ps) n p n n n ) *)
 | _ => None
 (* | Less ps n p => rz_compare x n p 
 | Equal ps n p => rz_compare x n p 
@@ -136,22 +201,6 @@ Fixpoint exp_elim (p:expr) :=
   end.
 
 Definition Z (p:posi) := RZ 1 p.
-
-Fixpoint inv_exp p :=
-  match p with
-  | SKIP a => SKIP a
-  | X n => X n
-  | CUexpr n p => CUexpr n (inv_exp p)
-  | SR n x => SRR n x
-  | SRR n x => SR n x
- (* | HCNOT p1 p2 => HCNOT p1 p2 *)
-  | RZ q p1 => RRZ q p1
-  | RRZ q p1 => RZ q p1
-  | QFT x b => RQFT x b
-  | RQFT x b => QFT x b
-  (*| H x => H x*)
-  | Seq p1 p2 => Seq (inv_exp p2) (inv_exp p1)
-   end.
 
 Fixpoint GCCX' x n size :=
   match n with
