@@ -21,19 +21,19 @@ oqasmArithmeticOp : addition
                   | equality
                   | comparison;
 
-parameter : qubit
+parameter : QUBIT
           | NAT;
 
 
 // Low Level
 
-hadamardOp : HAD '(' qubit ')';
+hadamardOp : 'h(' QUBIT ')';
 
-newQubit : 'new (' qubit ')';
+newQubit : 'new (' QUBIT ')';
 
 conditional : 'if (' BOOL ')' program 'else' program;
 
-yRotation : 'Ry' ANGLE QUBIT;
+yRotation : 'Ry' angle QUBIT;
 
 controlledInstruction : 'CU' QUBIT instruction;
 
@@ -41,14 +41,18 @@ addition : 'add(' parameter ',' parameter ')';
 
 modMult : '(' NAT '*' parameter ') % ' NAT;
 
-equality : '(' parmeter '=' parameter ') @ ' QUBIT;
+equality : '(' parameter '=' parameter ') @ ' QUBIT;
 
-comparison : '(' parmeter '<' parameter ') @ ' QUBIT
+comparison : '(' parameter '<' parameter ') @ ' QUBIT;
+
+angle : REAL;
 
 
 // -------------------------- Lexer Tokens ------------------------------------
 
 NAT : [0-9]+;
+
+REAL : [+-]? DIGIT+ ('.' DIGIT+)? ([eE] [+-]? DIGIT+)?; // Real number
 
 BOOL : true
      | false;
