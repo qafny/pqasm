@@ -52,7 +52,7 @@ boolOrVarName : BOOL
 
 // -------------------------- Lexer Tokens ------------------------------------
 
-ESKIP : skip
+ESKIP : eskip;
 
 NAT : [0-9]+;
 
