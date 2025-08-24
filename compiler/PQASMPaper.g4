@@ -1,23 +1,23 @@
 grammar PQASMPaper;
 
 // This grammar is only aligned with the paper, not the actual syntax being used
-// in the test cases
+// in the real PQASM code.
 
 // -------------------------- Parser Rules ------------------------------------
 
 // High Level
 
-program : instruction
-        | program+
-        | hadamardOp
-        | newQubit
-        | measurement
-        | conditional;
+program : statement+ ;
+
+statement : instruction
+          | hadamardOp
+          | newQubit
+          | measurement
+          | conditional;
 
 instruction : oqasmArithmeticOp
             | yRotation
-            | controlledInstruction
-            | instruction+;
+            | controlledInstruction;
 
 oqasmArithmeticOp : addition
                   | modMult // modular multiplication
@@ -34,6 +34,8 @@ hadamardOp : 'h(' QUBIT ')';
 
 newQubit : 'new (' QUBIT ')';
 
+measurement : 'M (' QUBIT ')';
+
 conditional : 'if (' BOOL ')' program 'else' program;
 
 yRotation : 'Ry' angle QUBIT;
@@ -48,17 +50,17 @@ equality : '(' parameter '=' parameter ') @ ' QUBIT;
 
 comparison : '(' parameter '<' parameter ') @ ' QUBIT;
 
-angle : REAL;
+angle : NAT;
 
 
 // -------------------------- Lexer Tokens ------------------------------------
 
 NAT : [0-9]+;
 
-REAL : [+-]? DIGIT+ ('.' DIGIT+)? ([eE] [+-]? DIGIT+)?; // Real number
+DIGIT : [0-9];
 
-BOOL : true
-     | false;
+BOOL : 'true'
+     | 'false';
 
 QUBIT : [a-zA-Z_][a-zA-Z_0-9]*; // Anything that starts with a letter
 

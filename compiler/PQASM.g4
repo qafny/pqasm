@@ -1,4 +1,4 @@
-grammar PQASMCode;
+grammar PQASM;
 
 // -------------------------- Parser Rules ------------------------------------
 
@@ -59,6 +59,6 @@ NAT : [0-9]+;
 BOOL : 'true'
      | 'false'; // I'm not sure how booleans are even written in PQASM, this is a guess
 
-VARNAME : [a-zA-Z_0-9]*; // Any combo of letters and numbers
+VARNAME : [a-zA-Z_0-9]+; // Any combo of letters and numbers
 
 WS : [ \t\r\n]+ -> skip; // ignore any whitespace
