@@ -98,5 +98,14 @@ class PQASMListener(ParseTreeListener):
         pass
 
 
+    # Enter a parse tree produced by PQASMParser#natOrNatMaker.
+    def enterNatOrNatMaker(self, ctx:PQASMParser.NatOrNatMakerContext):
+        pass
+
+    # Exit a parse tree produced by PQASMParser#natOrNatMaker.
+    def exitNatOrNatMaker(self, ctx:PQASMParser.NatOrNatMakerContext):
+        pass
+
+
 
 del PQASMParser

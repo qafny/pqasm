@@ -10,60 +10,58 @@ else:
 
 def serializedATN():
     return [
-        4,1,31,169,2,0,7,0,2,1,7,1,2,2,7,2,2,3,7,3,2,4,7,4,2,5,7,5,2,6,7,
-        6,2,7,7,7,2,8,7,8,2,9,7,9,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,
-        0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,
-        0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,3,0,57,8,0,1,1,1,1,1,1,
-        1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
-        1,1,1,1,1,1,1,1,3,1,82,8,1,1,2,1,2,1,2,1,2,1,2,1,2,1,2,1,2,1,2,1,
-        2,1,2,1,2,1,2,1,2,1,2,1,2,1,2,1,2,1,2,1,2,1,2,1,2,1,2,1,2,1,2,1,
-        2,1,2,1,2,1,2,1,2,1,2,1,2,1,2,1,2,1,2,1,2,3,2,120,8,2,1,3,1,3,1,
-        3,1,3,1,3,1,3,1,3,1,3,1,3,1,3,1,3,1,3,1,3,1,3,1,3,1,3,1,3,1,3,1,
-        3,3,3,141,8,3,1,4,1,4,1,4,1,4,1,4,1,4,1,4,1,4,1,4,1,4,1,4,1,4,3,
-        4,155,8,4,1,5,1,5,1,5,1,5,1,6,1,6,1,7,1,7,1,8,1,8,1,9,1,9,1,9,0,
-        0,10,0,2,4,6,8,10,12,14,16,18,0,2,2,0,28,28,30,30,1,0,29,30,178,
-        0,56,1,0,0,0,2,81,1,0,0,0,4,119,1,0,0,0,6,140,1,0,0,0,8,154,1,0,
-        0,0,10,156,1,0,0,0,12,160,1,0,0,0,14,162,1,0,0,0,16,164,1,0,0,0,
-        18,166,1,0,0,0,20,57,5,1,0,0,21,22,5,2,0,0,22,23,3,2,1,0,23,24,5,
-        3,0,0,24,57,1,0,0,0,25,26,5,4,0,0,26,27,3,10,5,0,27,28,5,3,0,0,28,
-        57,1,0,0,0,29,30,5,5,0,0,30,31,3,10,5,0,31,32,5,3,0,0,32,57,1,0,
-        0,0,33,34,5,6,0,0,34,35,3,0,0,0,35,36,5,7,0,0,36,37,3,0,0,0,37,38,
-        5,3,0,0,38,57,1,0,0,0,39,40,5,8,0,0,40,41,3,16,8,0,41,42,5,7,0,0,
-        42,43,3,10,5,0,43,44,5,7,0,0,44,45,3,0,0,0,45,46,5,3,0,0,46,57,1,
-        0,0,0,47,48,5,9,0,0,48,49,3,8,4,0,49,50,5,7,0,0,50,51,3,0,0,0,51,
-        52,5,7,0,0,52,53,3,0,0,0,53,54,5,3,0,0,54,57,1,0,0,0,55,57,3,2,1,
-        0,56,20,1,0,0,0,56,21,1,0,0,0,56,25,1,0,0,0,56,29,1,0,0,0,56,33,
-        1,0,0,0,56,39,1,0,0,0,56,47,1,0,0,0,56,55,1,0,0,0,57,1,1,0,0,0,58,
-        59,5,10,0,0,59,60,3,2,1,0,60,61,5,7,0,0,61,62,3,2,1,0,62,63,5,3,
-        0,0,63,82,1,0,0,0,64,65,5,11,0,0,65,66,3,12,6,0,66,67,5,7,0,0,67,
-        68,3,2,1,0,68,69,5,3,0,0,69,82,1,0,0,0,70,71,5,12,0,0,71,72,3,4,
-        2,0,72,73,5,3,0,0,73,82,1,0,0,0,74,75,5,13,0,0,75,76,3,12,6,0,76,
-        77,5,7,0,0,77,78,3,14,7,0,78,79,5,3,0,0,79,82,1,0,0,0,80,82,3,4,
-        2,0,81,58,1,0,0,0,81,64,1,0,0,0,81,70,1,0,0,0,81,74,1,0,0,0,81,80,
-        1,0,0,0,82,3,1,0,0,0,83,84,5,14,0,0,84,85,3,10,5,0,85,86,5,7,0,0,
-        86,87,3,16,8,0,87,88,5,3,0,0,88,120,1,0,0,0,89,90,5,15,0,0,90,91,
-        3,10,5,0,91,92,5,7,0,0,92,93,3,16,8,0,93,94,5,7,0,0,94,95,3,12,6,
-        0,95,96,5,3,0,0,96,120,1,0,0,0,97,98,5,16,0,0,98,99,3,10,5,0,99,
-        100,5,7,0,0,100,101,3,16,8,0,101,102,5,7,0,0,102,103,3,12,6,0,103,
-        104,5,3,0,0,104,120,1,0,0,0,105,106,5,17,0,0,106,107,3,10,5,0,107,
-        108,5,7,0,0,108,109,3,16,8,0,109,110,5,7,0,0,110,111,3,16,8,0,111,
-        112,5,3,0,0,112,120,1,0,0,0,113,114,5,18,0,0,114,115,3,10,5,0,115,
-        116,5,7,0,0,116,117,3,12,6,0,117,118,5,3,0,0,118,120,1,0,0,0,119,
-        83,1,0,0,0,119,89,1,0,0,0,119,97,1,0,0,0,119,105,1,0,0,0,119,113,
-        1,0,0,0,120,5,1,0,0,0,121,122,5,19,0,0,122,123,5,30,0,0,123,141,
-        5,3,0,0,124,125,5,20,0,0,125,126,5,28,0,0,126,141,5,3,0,0,127,128,
-        5,21,0,0,128,129,3,6,3,0,129,130,5,7,0,0,130,131,3,6,3,0,131,132,
-        5,3,0,0,132,141,1,0,0,0,133,134,5,22,0,0,134,135,3,6,3,0,135,136,
-        5,7,0,0,136,137,3,6,3,0,137,138,5,3,0,0,138,141,1,0,0,0,139,141,
-        3,16,8,0,140,121,1,0,0,0,140,124,1,0,0,0,140,127,1,0,0,0,140,133,
-        1,0,0,0,140,139,1,0,0,0,141,7,1,0,0,0,142,143,5,23,0,0,143,144,3,
-        6,3,0,144,145,5,7,0,0,145,146,3,6,3,0,146,147,5,3,0,0,147,155,1,
-        0,0,0,148,149,5,24,0,0,149,150,3,6,3,0,150,151,5,7,0,0,151,152,3,
-        6,3,0,152,153,5,3,0,0,153,155,1,0,0,0,154,142,1,0,0,0,154,148,1,
-        0,0,0,155,9,1,0,0,0,156,157,5,25,0,0,157,158,5,30,0,0,158,159,5,
-        26,0,0,159,11,1,0,0,0,160,161,3,16,8,0,161,13,1,0,0,0,162,163,3,
-        16,8,0,163,15,1,0,0,0,164,165,7,0,0,0,165,17,1,0,0,0,166,167,7,1,
-        0,0,167,19,1,0,0,0,5,56,81,119,140,154
+        4,1,32,157,2,0,7,0,2,1,7,1,2,2,7,2,2,3,7,3,2,4,7,4,2,5,7,5,2,6,7,
+        6,2,7,7,7,2,8,7,8,2,9,7,9,2,10,7,10,1,0,1,0,1,0,1,0,1,0,1,0,1,0,
+        1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,
+        1,0,1,0,1,0,3,0,49,8,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
+        1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,3,1,70,8,1,1,2,1,2,1,2,1,2,1,2,
+        1,2,1,2,1,2,1,2,1,2,1,2,1,2,1,2,1,2,1,2,1,2,1,2,1,2,1,2,1,2,1,2,
+        1,2,1,2,1,2,1,2,1,2,1,2,3,2,99,8,2,1,3,1,3,1,3,1,3,1,3,1,3,1,3,1,
+        3,1,3,1,3,1,3,1,3,1,3,1,3,1,3,1,3,1,3,3,3,118,8,3,1,4,1,4,1,4,1,
+        4,1,4,1,4,1,4,1,4,1,4,1,4,1,4,1,4,3,4,132,8,4,1,5,1,5,1,5,1,5,1,
+        6,1,6,1,7,1,7,1,8,1,8,3,8,144,8,8,1,9,1,9,1,10,1,10,1,10,1,10,1,
+        10,1,10,1,10,3,10,155,8,10,1,10,0,0,11,0,2,4,6,8,10,12,14,16,18,
+        20,0,1,1,0,30,31,173,0,48,1,0,0,0,2,69,1,0,0,0,4,98,1,0,0,0,6,117,
+        1,0,0,0,8,131,1,0,0,0,10,133,1,0,0,0,12,137,1,0,0,0,14,139,1,0,0,
+        0,16,143,1,0,0,0,18,145,1,0,0,0,20,154,1,0,0,0,22,49,5,1,0,0,23,
+        24,5,2,0,0,24,49,3,2,1,0,25,26,5,3,0,0,26,49,3,10,5,0,27,28,5,4,
+        0,0,28,49,3,10,5,0,29,30,5,5,0,0,30,31,3,0,0,0,31,32,3,0,0,0,32,
+        49,1,0,0,0,33,34,5,6,0,0,34,35,3,16,8,0,35,36,3,10,5,0,36,37,3,0,
+        0,0,37,49,1,0,0,0,38,39,5,7,0,0,39,40,3,8,4,0,40,41,3,0,0,0,41,42,
+        3,0,0,0,42,49,1,0,0,0,43,49,3,2,1,0,44,45,5,8,0,0,45,46,3,0,0,0,
+        46,47,5,9,0,0,47,49,1,0,0,0,48,22,1,0,0,0,48,23,1,0,0,0,48,25,1,
+        0,0,0,48,27,1,0,0,0,48,29,1,0,0,0,48,33,1,0,0,0,48,38,1,0,0,0,48,
+        43,1,0,0,0,48,44,1,0,0,0,49,1,1,0,0,0,50,51,5,10,0,0,51,52,3,2,1,
+        0,52,53,3,2,1,0,53,70,1,0,0,0,54,55,5,11,0,0,55,56,3,12,6,0,56,57,
+        3,2,1,0,57,70,1,0,0,0,58,59,5,12,0,0,59,70,3,4,2,0,60,61,5,13,0,
+        0,61,62,3,12,6,0,62,63,3,14,7,0,63,70,1,0,0,0,64,70,3,4,2,0,65,66,
+        5,8,0,0,66,67,3,2,1,0,67,68,5,9,0,0,68,70,1,0,0,0,69,50,1,0,0,0,
+        69,54,1,0,0,0,69,58,1,0,0,0,69,60,1,0,0,0,69,64,1,0,0,0,69,65,1,
+        0,0,0,70,3,1,0,0,0,71,72,5,14,0,0,72,73,3,10,5,0,73,74,3,16,8,0,
+        74,99,1,0,0,0,75,76,5,15,0,0,76,77,3,10,5,0,77,78,3,16,8,0,78,79,
+        3,12,6,0,79,99,1,0,0,0,80,81,5,16,0,0,81,82,3,10,5,0,82,83,3,16,
+        8,0,83,84,3,12,6,0,84,99,1,0,0,0,85,86,5,17,0,0,86,87,3,10,5,0,87,
+        88,3,16,8,0,88,89,3,16,8,0,89,99,1,0,0,0,90,91,5,18,0,0,91,92,3,
+        10,5,0,92,93,3,12,6,0,93,99,1,0,0,0,94,95,5,8,0,0,95,96,3,4,2,0,
+        96,97,5,9,0,0,97,99,1,0,0,0,98,71,1,0,0,0,98,75,1,0,0,0,98,80,1,
+        0,0,0,98,85,1,0,0,0,98,90,1,0,0,0,98,94,1,0,0,0,99,5,1,0,0,0,100,
+        101,5,19,0,0,101,118,5,31,0,0,102,103,5,20,0,0,103,118,3,20,10,0,
+        104,105,5,21,0,0,105,106,3,6,3,0,106,107,3,6,3,0,107,118,1,0,0,0,
+        108,109,5,22,0,0,109,110,3,6,3,0,110,111,3,6,3,0,111,118,1,0,0,0,
+        112,118,3,16,8,0,113,114,5,8,0,0,114,115,3,6,3,0,115,116,5,9,0,0,
+        116,118,1,0,0,0,117,100,1,0,0,0,117,102,1,0,0,0,117,104,1,0,0,0,
+        117,108,1,0,0,0,117,112,1,0,0,0,117,113,1,0,0,0,118,7,1,0,0,0,119,
+        120,5,23,0,0,120,121,3,6,3,0,121,122,3,6,3,0,122,132,1,0,0,0,123,
+        124,5,24,0,0,124,125,3,6,3,0,125,126,3,6,3,0,126,132,1,0,0,0,127,
+        128,5,8,0,0,128,129,3,8,4,0,129,130,5,9,0,0,130,132,1,0,0,0,131,
+        119,1,0,0,0,131,123,1,0,0,0,131,127,1,0,0,0,132,9,1,0,0,0,133,134,
+        5,25,0,0,134,135,5,31,0,0,135,136,5,26,0,0,136,11,1,0,0,0,137,138,
+        3,16,8,0,138,13,1,0,0,0,139,140,3,16,8,0,140,15,1,0,0,0,141,144,
+        3,20,10,0,142,144,5,31,0,0,143,141,1,0,0,0,143,142,1,0,0,0,144,17,
+        1,0,0,0,145,146,7,0,0,0,146,19,1,0,0,0,147,155,5,29,0,0,148,149,
+        5,27,0,0,149,155,5,29,0,0,150,151,5,8,0,0,151,152,3,20,10,0,152,
+        153,5,9,0,0,153,155,1,0,0,0,154,147,1,0,0,0,154,148,1,0,0,0,154,
+        150,1,0,0,0,155,21,1,0,0,0,7,48,69,98,117,131,143,154
     ]
 
 class PQASMParser ( Parser ):
@@ -76,12 +74,12 @@ class PQASMParser ( Parser ):
 
     sharedContextCache = PredictionContextCache()
 
-    literalNames = [ "<INVALID>", "'ESKIP'", "'Next ('", "')'", "'Had ('", 
-                     "'New ('", "'ESeq ('", "') ('", "'Meas ('", "'IFa ('", 
-                     "'ISeq ('", "'ICU ('", "'Ora ('", "'Ry ('", "'Add ('", 
-                     "'Less ('", "'Equal ('", "'ModMult ('", "'Equal_posi_list ('", 
-                     "'BA ('", "'Num ('", "'APlus ('", "'AMult ('", "'CEq ('", 
-                     "'CLt ('", "'['", "']'", "'eskip'" ]
+    literalNames = [ "<INVALID>", "'ESKIP'", "'Next'", "'Had'", "'New'", 
+                     "'ESeq'", "'Meas'", "'IFa'", "'('", "')'", "'ISeq'", 
+                     "'ICU'", "'Ora'", "'Ry'", "'Add'", "'Less'", "'Equal'", 
+                     "'ModMult'", "'Equal_posi_list'", "'BA'", "'Num'", 
+                     "'APlus'", "'AMult'", "'CEq'", "'CLt'", "'['", "']'", 
+                     "'nat2fb'", "'eskip'" ]
 
     symbolicNames = [ "<INVALID>", "<INVALID>", "<INVALID>", "<INVALID>", 
                       "<INVALID>", "<INVALID>", "<INVALID>", "<INVALID>", 
@@ -89,8 +87,8 @@ class PQASMParser ( Parser ):
                       "<INVALID>", "<INVALID>", "<INVALID>", "<INVALID>", 
                       "<INVALID>", "<INVALID>", "<INVALID>", "<INVALID>", 
                       "<INVALID>", "<INVALID>", "<INVALID>", "<INVALID>", 
-                      "<INVALID>", "<INVALID>", "<INVALID>", "ESKIP", "NAT", 
-                      "BOOL", "VARNAME", "WS" ]
+                      "<INVALID>", "<INVALID>", "<INVALID>", "<INVALID>", 
+                      "ESKIP", "NAT", "BOOL", "VARNAME", "WS" ]
 
     RULE_program = 0
     RULE_instr = 1
@@ -102,9 +100,10 @@ class PQASMParser ( Parser ):
     RULE_rot = 7
     RULE_natOrVarname = 8
     RULE_boolOrVarName = 9
+    RULE_natOrNatMaker = 10
 
     ruleNames =  [ "program", "instr", "mu", "arithExp", "cBoolExp", "list", 
-                   "pos", "rot", "natOrVarname", "boolOrVarName" ]
+                   "pos", "rot", "natOrVarname", "boolOrVarName", "natOrNatMaker" ]
 
     EOF = Token.EOF
     T__0=1
@@ -133,11 +132,12 @@ class PQASMParser ( Parser ):
     T__23=24
     T__24=25
     T__25=26
-    ESKIP=27
-    NAT=28
-    BOOL=29
-    VARNAME=30
-    WS=31
+    T__26=27
+    ESKIP=28
+    NAT=29
+    BOOL=30
+    VARNAME=31
+    WS=32
 
     def __init__(self, input:TokenStream, output:TextIO = sys.stdout):
         super().__init__(input, output)
@@ -197,95 +197,89 @@ class PQASMParser ( Parser ):
         localctx = PQASMParser.ProgramContext(self, self._ctx, self.state)
         self.enterRule(localctx, 0, self.RULE_program)
         try:
-            self.state = 56
+            self.state = 48
             self._errHandler.sync(self)
-            token = self._input.LA(1)
-            if token in [1]:
+            la_ = self._interp.adaptivePredict(self._input,0,self._ctx)
+            if la_ == 1:
                 self.enterOuterAlt(localctx, 1)
-                self.state = 20
+                self.state = 22
                 self.match(PQASMParser.T__0)
                 pass
-            elif token in [2]:
+
+            elif la_ == 2:
                 self.enterOuterAlt(localctx, 2)
-                self.state = 21
-                self.match(PQASMParser.T__1)
-                self.state = 22
-                self.instr()
                 self.state = 23
-                self.match(PQASMParser.T__2)
+                self.match(PQASMParser.T__1)
+                self.state = 24
+                self.instr()
                 pass
-            elif token in [4]:
+
+            elif la_ == 3:
                 self.enterOuterAlt(localctx, 3)
                 self.state = 25
-                self.match(PQASMParser.T__3)
+                self.match(PQASMParser.T__2)
                 self.state = 26
                 self.list_()
-                self.state = 27
-                self.match(PQASMParser.T__2)
                 pass
-            elif token in [5]:
+
+            elif la_ == 4:
                 self.enterOuterAlt(localctx, 4)
+                self.state = 27
+                self.match(PQASMParser.T__3)
+                self.state = 28
+                self.list_()
+                pass
+
+            elif la_ == 5:
+                self.enterOuterAlt(localctx, 5)
                 self.state = 29
                 self.match(PQASMParser.T__4)
                 self.state = 30
-                self.list_()
+                self.program()
                 self.state = 31
-                self.match(PQASMParser.T__2)
+                self.program()
                 pass
-            elif token in [6]:
-                self.enterOuterAlt(localctx, 5)
+
+            elif la_ == 6:
+                self.enterOuterAlt(localctx, 6)
                 self.state = 33
                 self.match(PQASMParser.T__5)
                 self.state = 34
-                self.program()
+                self.natOrVarname()
                 self.state = 35
-                self.match(PQASMParser.T__6)
+                self.list_()
                 self.state = 36
                 self.program()
-                self.state = 37
-                self.match(PQASMParser.T__2)
                 pass
-            elif token in [8]:
-                self.enterOuterAlt(localctx, 6)
-                self.state = 39
-                self.match(PQASMParser.T__7)
-                self.state = 40
-                self.natOrVarname()
-                self.state = 41
-                self.match(PQASMParser.T__6)
-                self.state = 42
-                self.list_()
-                self.state = 43
-                self.match(PQASMParser.T__6)
-                self.state = 44
-                self.program()
-                self.state = 45
-                self.match(PQASMParser.T__2)
-                pass
-            elif token in [9]:
+
+            elif la_ == 7:
                 self.enterOuterAlt(localctx, 7)
-                self.state = 47
-                self.match(PQASMParser.T__8)
-                self.state = 48
+                self.state = 38
+                self.match(PQASMParser.T__6)
+                self.state = 39
                 self.cBoolExp()
-                self.state = 49
-                self.match(PQASMParser.T__6)
-                self.state = 50
+                self.state = 40
                 self.program()
-                self.state = 51
-                self.match(PQASMParser.T__6)
-                self.state = 52
+                self.state = 41
                 self.program()
-                self.state = 53
-                self.match(PQASMParser.T__2)
                 pass
-            elif token in [10, 11, 12, 13, 14, 15, 16, 17, 18]:
+
+            elif la_ == 8:
                 self.enterOuterAlt(localctx, 8)
-                self.state = 55
+                self.state = 43
                 self.instr()
                 pass
-            else:
-                raise NoViableAltException(self)
+
+            elif la_ == 9:
+                self.enterOuterAlt(localctx, 9)
+                self.state = 44
+                self.match(PQASMParser.T__7)
+                self.state = 45
+                self.program()
+                self.state = 46
+                self.match(PQASMParser.T__8)
+                pass
+
 
         except RecognitionException as re:
             localctx.exception = re
@@ -341,64 +335,63 @@ class PQASMParser ( Parser ):
         localctx = PQASMParser.InstrContext(self, self._ctx, self.state)
         self.enterRule(localctx, 2, self.RULE_instr)
         try:
-            self.state = 81
+            self.state = 69
             self._errHandler.sync(self)
-            token = self._input.LA(1)
-            if token in [10]:
+            la_ = self._interp.adaptivePredict(self._input,1,self._ctx)
+            if la_ == 1:
                 self.enterOuterAlt(localctx, 1)
-                self.state = 58
+                self.state = 50
                 self.match(PQASMParser.T__9)
-                self.state = 59
+                self.state = 51
                 self.instr()
-                self.state = 60
-                self.match(PQASMParser.T__6)
-                self.state = 61
+                self.state = 52
                 self.instr()
-                self.state = 62
-                self.match(PQASMParser.T__2)
                 pass
-            elif token in [11]:
+
+            elif la_ == 2:
                 self.enterOuterAlt(localctx, 2)
-                self.state = 64
+                self.state = 54
                 self.match(PQASMParser.T__10)
-                self.state = 65
+                self.state = 55
                 self.pos()
-                self.state = 66
-                self.match(PQASMParser.T__6)
-                self.state = 67
+                self.state = 56
                 self.instr()
-                self.state = 68
-                self.match(PQASMParser.T__2)
                 pass
-            elif token in [12]:
+
+            elif la_ == 3:
                 self.enterOuterAlt(localctx, 3)
-                self.state = 70
+                self.state = 58
                 self.match(PQASMParser.T__11)
-                self.state = 71
+                self.state = 59
                 self.mu()
-                self.state = 72
-                self.match(PQASMParser.T__2)
                 pass
-            elif token in [13]:
+
+            elif la_ == 4:
                 self.enterOuterAlt(localctx, 4)
-                self.state = 74
+                self.state = 60
                 self.match(PQASMParser.T__12)
-                self.state = 75
+                self.state = 61
                 self.pos()
-                self.state = 76
-                self.match(PQASMParser.T__6)
-                self.state = 77
+                self.state = 62
                 self.rot()
-                self.state = 78
-                self.match(PQASMParser.T__2)
                 pass
-            elif token in [14, 15, 16, 17, 18]:
+
+            elif la_ == 5:
                 self.enterOuterAlt(localctx, 5)
-                self.state = 80
+                self.state = 64
                 self.mu()
                 pass
-            else:
-                raise NoViableAltException(self)
+
+            elif la_ == 6:
+                self.enterOuterAlt(localctx, 6)
+                self.state = 65
+                self.match(PQASMParser.T__7)
+                self.state = 66
+                self.instr()
+                self.state = 67
+                self.match(PQASMParser.T__8)
+                pass
+
 
         except RecognitionException as re:
             localctx.exception = re
@@ -431,6 +424,10 @@ class PQASMParser ( Parser ):
             return self.getTypedRuleContext(PQASMParser.PosContext,0)
 
 
+        def mu(self):
+            return self.getTypedRuleContext(PQASMParser.MuContext,0)
+
+
         def getRuleIndex(self):
             return PQASMParser.RULE_mu
 
@@ -450,85 +447,68 @@ class PQASMParser ( Parser ):
         localctx = PQASMParser.MuContext(self, self._ctx, self.state)
         self.enterRule(localctx, 4, self.RULE_mu)
         try:
-            self.state = 119
+            self.state = 98
             self._errHandler.sync(self)
             token = self._input.LA(1)
             if token in [14]:
                 self.enterOuterAlt(localctx, 1)
-                self.state = 83
+                self.state = 71
                 self.match(PQASMParser.T__13)
-                self.state = 84
+                self.state = 72
                 self.list_()
-                self.state = 85
-                self.match(PQASMParser.T__6)
-                self.state = 86
+                self.state = 73
                 self.natOrVarname()
-                self.state = 87
-                self.match(PQASMParser.T__2)
                 pass
             elif token in [15]:
                 self.enterOuterAlt(localctx, 2)
-                self.state = 89
+                self.state = 75
                 self.match(PQASMParser.T__14)
-                self.state = 90
+                self.state = 76
                 self.list_()
-                self.state = 91
-                self.match(PQASMParser.T__6)
-                self.state = 92
+                self.state = 77
                 self.natOrVarname()
-                self.state = 93
-                self.match(PQASMParser.T__6)
-                self.state = 94
+                self.state = 78
                 self.pos()
-                self.state = 95
-                self.match(PQASMParser.T__2)
                 pass
             elif token in [16]:
                 self.enterOuterAlt(localctx, 3)
-                self.state = 97
+                self.state = 80
                 self.match(PQASMParser.T__15)
-                self.state = 98
+                self.state = 81
                 self.list_()
-                self.state = 99
-                self.match(PQASMParser.T__6)
-                self.state = 100
+                self.state = 82
                 self.natOrVarname()
-                self.state = 101
-                self.match(PQASMParser.T__6)
-                self.state = 102
+                self.state = 83
                 self.pos()
-                self.state = 103
-                self.match(PQASMParser.T__2)
                 pass
             elif token in [17]:
                 self.enterOuterAlt(localctx, 4)
-                self.state = 105
+                self.state = 85
                 self.match(PQASMParser.T__16)
-                self.state = 106
+                self.state = 86
                 self.list_()
-                self.state = 107
-                self.match(PQASMParser.T__6)
-                self.state = 108
+                self.state = 87
                 self.natOrVarname()
-                self.state = 109
-                self.match(PQASMParser.T__6)
-                self.state = 110
+                self.state = 88
                 self.natOrVarname()
-                self.state = 111
-                self.match(PQASMParser.T__2)
                 pass
             elif token in [18]:
                 self.enterOuterAlt(localctx, 5)
-                self.state = 113
+                self.state = 90
                 self.match(PQASMParser.T__17)
-                self.state = 114
+                self.state = 91
                 self.list_()
-                self.state = 115
-                self.match(PQASMParser.T__6)
-                self.state = 116
+                self.state = 92
                 self.pos()
-                self.state = 117
-                self.match(PQASMParser.T__2)
+                pass
+            elif token in [8]:
+                self.enterOuterAlt(localctx, 6)
+                self.state = 94
+                self.match(PQASMParser.T__7)
+                self.state = 95
+                self.mu()
+                self.state = 96
+                self.match(PQASMParser.T__8)
                 pass
             else:
                 raise NoViableAltException(self)
@@ -552,8 +532,9 @@ class PQASMParser ( Parser ):
         def VARNAME(self):
             return self.getToken(PQASMParser.VARNAME, 0)
 
-        def NAT(self):
-            return self.getToken(PQASMParser.NAT, 0)
+        def natOrNatMaker(self):
+            return self.getTypedRuleContext(PQASMParser.NatOrNatMakerContext,0)
+
 
         def arithExp(self, i:int=None):
             if i is None:
@@ -585,60 +566,61 @@ class PQASMParser ( Parser ):
         localctx = PQASMParser.ArithExpContext(self, self._ctx, self.state)
         self.enterRule(localctx, 6, self.RULE_arithExp)
         try:
-            self.state = 140
+            self.state = 117
             self._errHandler.sync(self)
-            token = self._input.LA(1)
-            if token in [19]:
+            la_ = self._interp.adaptivePredict(self._input,3,self._ctx)
+            if la_ == 1:
                 self.enterOuterAlt(localctx, 1)
-                self.state = 121
+                self.state = 100
                 self.match(PQASMParser.T__18)
-                self.state = 122
+                self.state = 101
                 self.match(PQASMParser.VARNAME)
-                self.state = 123
-                self.match(PQASMParser.T__2)
                 pass
-            elif token in [20]:
+
+            elif la_ == 2:
                 self.enterOuterAlt(localctx, 2)
-                self.state = 124
+                self.state = 102
                 self.match(PQASMParser.T__19)
-                self.state = 125
-                self.match(PQASMParser.NAT)
-                self.state = 126
-                self.match(PQASMParser.T__2)
+                self.state = 103
+                self.natOrNatMaker()
                 pass
-            elif token in [21]:
+
+            elif la_ == 3:
                 self.enterOuterAlt(localctx, 3)
-                self.state = 127
+                self.state = 104
                 self.match(PQASMParser.T__20)
-                self.state = 128
+                self.state = 105
                 self.arithExp()
-                self.state = 129
-                self.match(PQASMParser.T__6)
-                self.state = 130
+                self.state = 106
                 self.arithExp()
-                self.state = 131
-                self.match(PQASMParser.T__2)
                 pass
-            elif token in [22]:
+
+            elif la_ == 4:
                 self.enterOuterAlt(localctx, 4)
-                self.state = 133
+                self.state = 108
                 self.match(PQASMParser.T__21)
-                self.state = 134
+                self.state = 109
                 self.arithExp()
-                self.state = 135
-                self.match(PQASMParser.T__6)
-                self.state = 136
+                self.state = 110
                 self.arithExp()
-                self.state = 137
-                self.match(PQASMParser.T__2)
                 pass
-            elif token in [28, 30]:
+
+            elif la_ == 5:
                 self.enterOuterAlt(localctx, 5)
-                self.state = 139
+                self.state = 112
                 self.natOrVarname()
                 pass
-            else:
-                raise NoViableAltException(self)
+
+            elif la_ == 6:
+                self.enterOuterAlt(localctx, 6)
+                self.state = 113
+                self.match(PQASMParser.T__7)
+                self.state = 114
+                self.arithExp()
+                self.state = 115
+                self.match(PQASMParser.T__8)
+                pass
+
 
         except RecognitionException as re:
             localctx.exception = re
@@ -663,6 +645,10 @@ class PQASMParser ( Parser ):
                 return self.getTypedRuleContext(PQASMParser.ArithExpContext,i)
 
 
+        def cBoolExp(self):
+            return self.getTypedRuleContext(PQASMParser.CBoolExpContext,0)
+
+
         def getRuleIndex(self):
             return PQASMParser.RULE_cBoolExp
 
@@ -682,34 +668,35 @@ class PQASMParser ( Parser ):
         localctx = PQASMParser.CBoolExpContext(self, self._ctx, self.state)
         self.enterRule(localctx, 8, self.RULE_cBoolExp)
         try:
-            self.state = 154
+            self.state = 131
             self._errHandler.sync(self)
             token = self._input.LA(1)
             if token in [23]:
                 self.enterOuterAlt(localctx, 1)
-                self.state = 142
+                self.state = 119
                 self.match(PQASMParser.T__22)
-                self.state = 143
+                self.state = 120
                 self.arithExp()
-                self.state = 144
-                self.match(PQASMParser.T__6)
-                self.state = 145
+                self.state = 121
                 self.arithExp()
-                self.state = 146
-                self.match(PQASMParser.T__2)
                 pass
             elif token in [24]:
                 self.enterOuterAlt(localctx, 2)
-                self.state = 148
+                self.state = 123
                 self.match(PQASMParser.T__23)
-                self.state = 149
+                self.state = 124
                 self.arithExp()
-                self.state = 150
-                self.match(PQASMParser.T__6)
-                self.state = 151
+                self.state = 125
                 self.arithExp()
-                self.state = 152
-                self.match(PQASMParser.T__2)
+                pass
+            elif token in [8]:
+                self.enterOuterAlt(localctx, 3)
+                self.state = 127
+                self.match(PQASMParser.T__7)
+                self.state = 128
+                self.cBoolExp()
+                self.state = 129
+                self.match(PQASMParser.T__8)
                 pass
             else:
                 raise NoViableAltException(self)
@@ -753,11 +740,11 @@ class PQASMParser ( Parser ):
         self.enterRule(localctx, 10, self.RULE_list)
         try:
             self.enterOuterAlt(localctx, 1)
-            self.state = 156
+            self.state = 133
             self.match(PQASMParser.T__24)
-            self.state = 157
+            self.state = 134
             self.match(PQASMParser.VARNAME)
-            self.state = 158
+            self.state = 135
             self.match(PQASMParser.T__25)
         except RecognitionException as re:
             localctx.exception = re
@@ -799,7 +786,7 @@ class PQASMParser ( Parser ):
         self.enterRule(localctx, 12, self.RULE_pos)
         try:
             self.enterOuterAlt(localctx, 1)
-            self.state = 160
+            self.state = 137
             self.natOrVarname()
         except RecognitionException as re:
             localctx.exception = re
@@ -841,7 +828,7 @@ class PQASMParser ( Parser ):
         self.enterRule(localctx, 14, self.RULE_rot)
         try:
             self.enterOuterAlt(localctx, 1)
-            self.state = 162
+            self.state = 139
             self.natOrVarname()
         except RecognitionException as re:
             localctx.exception = re
@@ -859,8 +846,9 @@ class PQASMParser ( Parser ):
             super().__init__(parent, invokingState)
             self.parser = parser
 
-        def NAT(self):
-            return self.getToken(PQASMParser.NAT, 0)
+        def natOrNatMaker(self):
+            return self.getTypedRuleContext(PQASMParser.NatOrNatMakerContext,0)
+
 
         def VARNAME(self):
             return self.getToken(PQASMParser.VARNAME, 0)
@@ -883,16 +871,23 @@ class PQASMParser ( Parser ):
 
         localctx = PQASMParser.NatOrVarnameContext(self, self._ctx, self.state)
         self.enterRule(localctx, 16, self.RULE_natOrVarname)
-        self._la = 0 # Token type
         try:
-            self.enterOuterAlt(localctx, 1)
-            self.state = 164
-            _la = self._input.LA(1)
-            if not(_la==28 or _la==30):
-                self._errHandler.recoverInline(self)
+            self.state = 143
+            self._errHandler.sync(self)
+            token = self._input.LA(1)
+            if token in [8, 27, 29]:
+                self.enterOuterAlt(localctx, 1)
+                self.state = 141
+                self.natOrNatMaker()
+                pass
+            elif token in [31]:
+                self.enterOuterAlt(localctx, 2)
+                self.state = 142
+                self.match(PQASMParser.VARNAME)
+                pass
             else:
-                self._errHandler.reportMatch(self)
-                self.consume()
+                raise NoViableAltException(self)
+
         except RecognitionException as re:
             localctx.exception = re
             self._errHandler.reportError(self, re)
@@ -936,13 +931,82 @@ class PQASMParser ( Parser ):
         self._la = 0 # Token type
         try:
             self.enterOuterAlt(localctx, 1)
-            self.state = 166
+            self.state = 145
             _la = self._input.LA(1)
-            if not(_la==29 or _la==30):
+            if not(_la==30 or _la==31):
                 self._errHandler.recoverInline(self)
             else:
                 self._errHandler.reportMatch(self)
                 self.consume()
+        except RecognitionException as re:
+            localctx.exception = re
+            self._errHandler.reportError(self, re)
+            self._errHandler.recover(self, re)
+        finally:
+            self.exitRule()
+        return localctx
+
+
+    class NatOrNatMakerContext(ParserRuleContext):
+        __slots__ = 'parser'
+
+        def __init__(self, parser, parent:ParserRuleContext=None, invokingState:int=-1):
+            super().__init__(parent, invokingState)
+            self.parser = parser
+
+        def NAT(self):
+            return self.getToken(PQASMParser.NAT, 0)
+
+        def natOrNatMaker(self):
+            return self.getTypedRuleContext(PQASMParser.NatOrNatMakerContext,0)
+
+
+        def getRuleIndex(self):
+            return PQASMParser.RULE_natOrNatMaker
+
+        def enterRule(self, listener:ParseTreeListener):
+            if hasattr( listener, "enterNatOrNatMaker" ):
+                listener.enterNatOrNatMaker(self)
+
+        def exitRule(self, listener:ParseTreeListener):
+            if hasattr( listener, "exitNatOrNatMaker" ):
+                listener.exitNatOrNatMaker(self)
+
+
+
+
+    def natOrNatMaker(self):
+
+        localctx = PQASMParser.NatOrNatMakerContext(self, self._ctx, self.state)
+        self.enterRule(localctx, 20, self.RULE_natOrNatMaker)
+        try:
+            self.state = 154
+            self._errHandler.sync(self)
+            token = self._input.LA(1)
+            if token in [29]:
+                self.enterOuterAlt(localctx, 1)
+                self.state = 147
+                self.match(PQASMParser.NAT)
+                pass
+            elif token in [27]:
+                self.enterOuterAlt(localctx, 2)
+                self.state = 148
+                self.match(PQASMParser.T__26)
+                self.state = 149
+                self.match(PQASMParser.NAT)
+                pass
+            elif token in [8]:
+                self.enterOuterAlt(localctx, 3)
+                self.state = 150
+                self.match(PQASMParser.T__7)
+                self.state = 151
+                self.natOrNatMaker()
+                self.state = 152
+                self.match(PQASMParser.T__8)
+                pass
+            else:
+                raise NoViableAltException(self)
+
         except RecognitionException as re:
             localctx.exception = re
             self._errHandler.reportError(self, re)

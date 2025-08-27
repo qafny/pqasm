@@ -1,4 +1,5 @@
-# By chatGPT
+# This file is by ChatGPT; it just calls the PQASM.g4
+# and prints the parse tree for an input file.
 
 from antlr4 import *
 from PQASMLexer import PQASMLexer
