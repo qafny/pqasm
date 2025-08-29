@@ -45,7 +45,6 @@ def main():
 
     outputFile = os.path.splitext(args.inputFile)[0] + ".qasm"
 
-    print("Output written to " + outputFile + "in location " + os.getcwd())
 
 
 
