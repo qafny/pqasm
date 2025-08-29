@@ -29,8 +29,9 @@ opam install coq
 opam repo add coq-released https://coq.inria.fr/opam/released
 opam update
 
-# install coq-quickchick
+# install coq-quickchick and ocamlbuild
 opam install coq-quickchick
+opam install ocamlbuild
 ```
 
 *Notes*:
