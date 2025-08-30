@@ -6,10 +6,12 @@ Along the way, it checks for syntax errors.
 import sys
 import argparse
 import os
+import subprocess
 from antlr4 import *
 from PQASMLexer import PQASMLexer
 from PQASMParser import PQASMParser
 from antlr4.error.ErrorListener import ErrorListener
+from pathlib import Path
 
 
 class EListener(ErrorListener):
@@ -42,6 +44,12 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("inputFile") # The file inputted in .pqasm
     args = parser.parse_args()
+
+    # Call the preexisiting modules to compile the .pqasm file into a .qasm file
+    experiments = Path(__file__).resolve().parent.parent / "experiments"
+    subprocess.run(["bash", "extract.sh"], cwd=experiments)
+    subprocess.run(["bash", "run.sh"], cwd=experiments)
+
 
     outputFile = os.path.splitext(args.inputFile)[0] + ".qasm"
 
