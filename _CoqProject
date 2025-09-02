@@ -16,6 +16,7 @@ externals/SQIR/SQIR/Equivalences.v
 externals/SQIR/SQIR/GateDecompositions.v
 externals/SQIR/SQIR/ExtractionGateSet.v
 externals/SQIR/SQIR/DiscreteProb.v
+externals/SQIR/SQIR/NDSem.v
 
 externals/SQIR/examples/QPE.v
 externals/SQIR/examples/Utilities.v
@@ -38,3 +39,8 @@ OQIMP.v
 OracleExample.v
 ArithTesting.v
 ExtrOQASM.v
+
+QafnySyntax.v
+LocusDef.v
+LocusKind.v
+LocusSem.v
