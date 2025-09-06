@@ -6,7 +6,6 @@ required for "XMLProgrammer.py".
 
 """
 
-
 import qiskit
 from qiskit import QuantumCircuit
 from qiskit.converters import circuit_to_dag
@@ -19,6 +18,7 @@ from XMLProgrammer import QXProgram, QXQID, QXCU, QXX, QXTop, QXExp, QXH
 qc = QuantumCircuit(2, 2)
 qc.h(0)
 qc.cx(0, 1)
+qc.x(1)
 qc.measure([0,1], [0,1])
 print(qc.draw())
 
@@ -94,6 +94,8 @@ class DAGVisitor:
                 exp = QXCU("cx", inputBits[0], QXProgram([QXX("x", inputBits[1])]))
             elif node.name == "h":
                 exp = QXH("h", inputBits[0])
+            elif node.name == "x":
+                exp = QXX("x", inputBits[0])
             else:
                 pass
 
@@ -110,7 +112,6 @@ class DAGVisitor:
 # DAG Printer
 #printerVistor = DAGVisitor(dagEx, "printDAG")
 #printerVistor.startVisit()
-
 
 # DAG to XMLProgrammer
 xmlProgrammerVisitor = DAGVisitor(dagEx)
