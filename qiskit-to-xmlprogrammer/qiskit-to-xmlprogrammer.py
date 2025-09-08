@@ -12,6 +12,7 @@ from qiskit.converters import circuit_to_dag
 from qiskit.dagcircuit import DAGInNode, DAGOpNode, DAGNode, DAGOutNode
 
 from XMLProgrammer import QXProgram, QXQID, QXCU, QXX, QXTop, QXExp, QXH
+#from XMLProgrammer import QXRZ
 
 
 # Example circuit
@@ -96,10 +97,12 @@ class DAGVisitor:
                 exp = QXH("h", inputBits[0])
             elif node.name == "x":
                 exp = QXX("x", inputBits[0])
+            elif node.name == "t":
+                exp = QXRZ("t", inputBits[0], 45)
+            elif node.name == "z":
+                exp = QXRZ("z", inputBits[0], 90)
             else:
-                pass
-
-            print("Expression found:", exp)
+                print("Warning: Unrecognized operation ", node.name)
 
             # Turn the extracted operation into an expression, and add it to
             # the list of expressions
