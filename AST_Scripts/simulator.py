@@ -2,8 +2,8 @@ import traceback
 from collections import ChainMap
 # from types import NoneType
 
-from Source.quantumCode.AST_Scripts.XMLProgrammer import *
-from Source.quantumCode.AST_Scripts.ProgramVisitor import *
+from XMLProgrammer import *
+from ProgramVisitor import *
 
 NoneType = type(None)
 
@@ -27,7 +27,7 @@ class CoqNVal(CoqVal):
 
 class CoqQVal(CoqVal):
 
-    def __init__(self, r1: int, r2: int, b: [bool], n: int):
+    def __init__(self, r1: int, r2: int, b: [bool] = None, n: int = None):
         self.r1 = r1
         self.r2 = r2
         self.n = n
@@ -280,6 +280,15 @@ class Simulator(ProgramVisitor):
         x = self.state.get(vx)[0]
         p = ctx.vexp().accept(self)  # this will pass the visitor to the child of ctx
         exchange(x, p)
+
+    def visitRZ(self, ctx: XMLProgrammer.QXRZ):
+        vx = ctx.ID()
+        val = self.state.get(vx)[0]
+        p = ctx.num().accept(self)  # this will pass the visitor to the child of ctx
+        if p >= 0:
+            times_rotate(val, p, val.getNum())
+        else:
+            times_r_rotate(val, p, val.getNum())
 
     # we will first get the position in st and check if the state is 0 or 1,
     # then decide if we go to recursively call ctx.exp

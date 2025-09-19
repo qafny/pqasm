@@ -1,7 +1,7 @@
-from Source.quantumCode.AST_Scripts import XMLProgrammer
-from Source.quantumCode.AST_Scripts.XMLProgrammer import *
+import XMLProgrammer
+from XMLProgrammer import *
 
-from Source.quantumCode.AST_Scripts.AbstractProgramVisitor import AbstractProgramVisitor
+from AbstractProgramVisitor import AbstractProgramVisitor
 
 
 class ProgramVisitor(AbstractProgramVisitor):
@@ -42,6 +42,10 @@ class ProgramVisitor(AbstractProgramVisitor):
                 return self.visitSKIP(ctx)
             case QXX():
                 return self.visitX(ctx)
+            case QXH():
+                return self.visitH(ctx)
+            case QXRZ():
+                return self.visitRZ(ctx)
             case QXSR():
                 return self.visitSR(ctx)
             case QXQFT():
@@ -123,6 +127,13 @@ class ProgramVisitor(AbstractProgramVisitor):
 
     def visitX(self, ctx: XMLProgrammer.QXX):
         ctx.vexp().accept(self)
+
+    def visitH(self, ctx: XMLProgrammer.QXH):
+        ctx.vexp().accept(self)
+
+    def visitRZ(self, ctx: XMLProgrammer.QXRZ):
+        ctx.vexp().accept(self)
+        ctx.num().accept(self)
 
     def visitSR(self, ctx: XMLProgrammer.QXSR):
         ctx.vexp().accept(self)

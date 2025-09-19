@@ -459,12 +459,6 @@ class XMLExpParser ( Parser ):
             if hasattr( listener, "exitRoot" ):
                 listener.exitRoot(self)
 
-        def accept(self, visitor:ParseTreeVisitor):
-            if hasattr( visitor, "visitRoot" ):
-                return visitor.visitRoot(self)
-            else:
-                return visitor.visitChildren(self)
-
 
 
 
@@ -524,12 +518,6 @@ class XMLExpParser ( Parser ):
             if hasattr( listener, "exitNextexp" ):
                 listener.exitNextexp(self)
 
-        def accept(self, visitor:ParseTreeVisitor):
-            if hasattr( visitor, "visitNextexp" ):
-                return visitor.visitNextexp(self)
-            else:
-                return visitor.visitChildren(self)
-
 
 
 
@@ -585,12 +573,6 @@ class XMLExpParser ( Parser ):
         def exitRule(self, listener:ParseTreeListener):
             if hasattr( listener, "exitProgram" ):
                 listener.exitProgram(self)
-
-        def accept(self, visitor:ParseTreeVisitor):
-            if hasattr( visitor, "visitProgram" ):
-                return visitor.visitProgram(self)
-            else:
-                return visitor.visitChildren(self)
 
 
 
@@ -691,12 +673,6 @@ class XMLExpParser ( Parser ):
         def exitRule(self, listener:ParseTreeListener):
             if hasattr( listener, "exitExp" ):
                 listener.exitExp(self)
-
-        def accept(self, visitor:ParseTreeVisitor):
-            if hasattr( visitor, "visitExp" ):
-                return visitor.visitExp(self)
-            else:
-                return visitor.visitChildren(self)
 
 
 
@@ -844,12 +820,6 @@ class XMLExpParser ( Parser ):
         def exitRule(self, listener:ParseTreeListener):
             if hasattr( listener, "exitIdexp" ):
                 listener.exitIdexp(self)
-
-        def accept(self, visitor:ParseTreeVisitor):
-            if hasattr( visitor, "visitIdexp" ):
-                return visitor.visitIdexp(self)
-            else:
-                return visitor.visitChildren(self)
 
 
 
@@ -1036,12 +1006,6 @@ class XMLExpParser ( Parser ):
             if hasattr( listener, "exitExppair" ):
                 listener.exitExppair(self)
 
-        def accept(self, visitor:ParseTreeVisitor):
-            if hasattr( visitor, "visitExppair" ):
-                return visitor.visitExppair(self)
-            else:
-                return visitor.visitChildren(self)
-
 
 
 
@@ -1119,12 +1083,6 @@ class XMLExpParser ( Parser ):
         def exitRule(self, listener:ParseTreeListener):
             if hasattr( listener, "exitMatchexp" ):
                 listener.exitMatchexp(self)
-
-        def accept(self, visitor:ParseTreeVisitor):
-            if hasattr( visitor, "visitMatchexp" ):
-                return visitor.visitMatchexp(self)
-            else:
-                return visitor.visitChildren(self)
 
 
 
@@ -1219,12 +1177,6 @@ class XMLExpParser ( Parser ):
             if hasattr( listener, "exitLetexp" ):
                 listener.exitLetexp(self)
 
-        def accept(self, visitor:ParseTreeVisitor):
-            if hasattr( visitor, "visitLetexp" ):
-                return visitor.visitLetexp(self)
-            else:
-                return visitor.visitChildren(self)
-
 
 
 
@@ -1315,12 +1267,6 @@ class XMLExpParser ( Parser ):
             if hasattr( listener, "exitIfexp" ):
                 listener.exitIfexp(self)
 
-        def accept(self, visitor:ParseTreeVisitor):
-            if hasattr( visitor, "visitIfexp" ):
-                return visitor.visitIfexp(self)
-            else:
-                return visitor.visitChildren(self)
-
 
 
 
@@ -1410,12 +1356,6 @@ class XMLExpParser ( Parser ):
         def exitRule(self, listener:ParseTreeListener):
             if hasattr( listener, "exitAppexp" ):
                 listener.exitAppexp(self)
-
-        def accept(self, visitor:ParseTreeVisitor):
-            if hasattr( visitor, "visitAppexp" ):
-                return visitor.visitAppexp(self)
-            else:
-                return visitor.visitChildren(self)
 
 
 
@@ -1535,12 +1475,6 @@ class XMLExpParser ( Parser ):
         def exitRule(self, listener:ParseTreeListener):
             if hasattr( listener, "exitVexp" ):
                 listener.exitVexp(self)
-
-        def accept(self, visitor:ParseTreeVisitor):
-            if hasattr( visitor, "visitVexp" ):
-                return visitor.visitVexp(self)
-            else:
-                return visitor.visitChildren(self)
 
 
 
@@ -1712,12 +1646,6 @@ class XMLExpParser ( Parser ):
             if hasattr( listener, "exitElement" ):
                 listener.exitElement(self)
 
-        def accept(self, visitor:ParseTreeVisitor):
-            if hasattr( visitor, "visitElement" ):
-                return visitor.visitElement(self)
-            else:
-                return visitor.visitChildren(self)
-
 
 
 
@@ -1773,12 +1701,6 @@ class XMLExpParser ( Parser ):
         def exitRule(self, listener:ParseTreeListener):
             if hasattr( listener, "exitNumexp" ):
                 listener.exitNumexp(self)
-
-        def accept(self, visitor:ParseTreeVisitor):
-            if hasattr( visitor, "visitNumexp" ):
-                return visitor.visitNumexp(self)
-            else:
-                return visitor.visitChildren(self)
 
 
 
@@ -1850,12 +1772,6 @@ class XMLExpParser ( Parser ):
         def exitRule(self, listener:ParseTreeListener):
             if hasattr( listener, "exitSkipexp" ):
                 listener.exitSkipexp(self)
-
-        def accept(self, visitor:ParseTreeVisitor):
-            if hasattr( visitor, "visitSkipexp" ):
-                return visitor.visitSkipexp(self)
-            else:
-                return visitor.visitChildren(self)
 
 
 
@@ -1959,12 +1875,6 @@ class XMLExpParser ( Parser ):
         def exitRule(self, listener:ParseTreeListener):
             if hasattr( listener, "exitXexp" ):
                 listener.exitXexp(self)
-
-        def accept(self, visitor:ParseTreeVisitor):
-            if hasattr( visitor, "visitXexp" ):
-                return visitor.visitXexp(self)
-            else:
-                return visitor.visitChildren(self)
 
 
 
@@ -2073,12 +1983,6 @@ class XMLExpParser ( Parser ):
             if hasattr( listener, "exitCuexp" ):
                 listener.exitCuexp(self)
 
-        def accept(self, visitor:ParseTreeVisitor):
-            if hasattr( visitor, "visitCuexp" ):
-                return visitor.visitCuexp(self)
-            else:
-                return visitor.visitChildren(self)
-
 
 
 
@@ -2184,12 +2088,6 @@ class XMLExpParser ( Parser ):
             if hasattr( listener, "exitSrexp" ):
                 listener.exitSrexp(self)
 
-        def accept(self, visitor:ParseTreeVisitor):
-            if hasattr( visitor, "visitSrexp" ):
-                return visitor.visitSrexp(self)
-            else:
-                return visitor.visitChildren(self)
-
 
 
 
@@ -2288,12 +2186,6 @@ class XMLExpParser ( Parser ):
         def exitRule(self, listener:ParseTreeListener):
             if hasattr( listener, "exitLshiftexp" ):
                 listener.exitLshiftexp(self)
-
-        def accept(self, visitor:ParseTreeVisitor):
-            if hasattr( visitor, "visitLshiftexp" ):
-                return visitor.visitLshiftexp(self)
-            else:
-                return visitor.visitChildren(self)
 
 
 
@@ -2443,12 +2335,6 @@ class XMLExpParser ( Parser ):
             if hasattr( listener, "exitRshiftexp" ):
                 listener.exitRshiftexp(self)
 
-        def accept(self, visitor:ParseTreeVisitor):
-            if hasattr( visitor, "visitRshiftexp" ):
-                return visitor.visitRshiftexp(self)
-            else:
-                return visitor.visitChildren(self)
-
 
 
 
@@ -2596,12 +2482,6 @@ class XMLExpParser ( Parser ):
         def exitRule(self, listener:ParseTreeListener):
             if hasattr( listener, "exitRevexp" ):
                 listener.exitRevexp(self)
-
-        def accept(self, visitor:ParseTreeVisitor):
-            if hasattr( visitor, "visitRevexp" ):
-                return visitor.visitRevexp(self)
-            else:
-                return visitor.visitChildren(self)
 
 
 
@@ -2755,12 +2635,6 @@ class XMLExpParser ( Parser ):
             if hasattr( listener, "exitQftexp" ):
                 listener.exitQftexp(self)
 
-        def accept(self, visitor:ParseTreeVisitor):
-            if hasattr( visitor, "visitQftexp" ):
-                return visitor.visitQftexp(self)
-            else:
-                return visitor.visitChildren(self)
-
 
 
 
@@ -2862,12 +2736,6 @@ class XMLExpParser ( Parser ):
         def exitRule(self, listener:ParseTreeListener):
             if hasattr( listener, "exitRqftexp" ):
                 listener.exitRqftexp(self)
-
-        def accept(self, visitor:ParseTreeVisitor):
-            if hasattr( visitor, "visitRqftexp" ):
-                return visitor.visitRqftexp(self)
-            else:
-                return visitor.visitChildren(self)
 
 
 
@@ -3023,12 +2891,6 @@ class XMLExpParser ( Parser ):
             if hasattr( listener, "exitOp" ):
                 listener.exitOp(self)
 
-        def accept(self, visitor:ParseTreeVisitor):
-            if hasattr( visitor, "visitOp" ):
-                return visitor.visitOp(self)
-            else:
-                return visitor.visitChildren(self)
-
 
 
 
@@ -3090,12 +2952,6 @@ class XMLExpParser ( Parser ):
         def exitRule(self, listener:ParseTreeListener):
             if hasattr( listener, "exitAtype" ):
                 listener.exitAtype(self)
-
-        def accept(self, visitor:ParseTreeVisitor):
-            if hasattr( visitor, "visitAtype" ):
-                return visitor.visitAtype(self)
-            else:
-                return visitor.visitChildren(self)
 
 
 

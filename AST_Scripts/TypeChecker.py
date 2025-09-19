@@ -6,10 +6,8 @@ from types import NoneType
 
 from antlr4 import ParserRuleContext
 
-from Source.quantumCode.AST_Scripts.XMLExpLexer import *
-from Source.quantumCode.AST_Scripts.XMLExpVisitor import *
-from Source.quantumCode.AST_Scripts.XMLTypeSearch import *
-from Source.quantumCode.AST_Scripts.XMLProgrammer import *
+from XMLProgrammer import *
+from ProgramVisitor import *
 
 
 class TypeChecker(ProgramVisitor):
@@ -148,6 +146,33 @@ class TypeChecker(ProgramVisitor):
         return False
         #return p < self.env.get(x) and str(self.type_environment.get(x)) == "Nor"
         # print(M_find(x, self.st))
+
+    def visitRZ(self, ctx: XMLProgrammer.QXRZ):
+        x = ctx.ID()
+        ctx.vexp().accept(self)
+        if isinstance(self.type_environment.get(x), Qty):
+            if self.type_environment.get(x).type() is None:
+                self.type_environment.update({x: Qty(self.type_environment.get(x).get_num(), "Nor")})
+                return True
+            else:
+                return self.type_environment.get(x).type() == "Nor"
+        return False
+        #return p < self.env.get(x) and str(self.type_environment.get(x)) == "Nor"
+        # print(M_find(x, self.st))
+
+    def visitH(self, ctx: XMLProgrammer.QXH):
+        x = ctx.ID()
+        ctx.vexp().accept(self)
+        if isinstance(self.type_environment.get(x), Qty):
+            if self.type_environment.get(x).type() is None:
+                self.type_environment.update({x: Qty(self.type_environment.get(x).get_num(), "Nor")})
+                return True
+            else:
+                return self.type_environment.get(x).type() == "Nor"
+        return False
+        #return p < self.env.get(x) and str(self.type_environment.get(x)) == "Nor"
+        # print(M_find(x, self.st))
+
 
     # we will first get the position in st and check if the state is 0 or 1,
     # then decide if we go to recucively call ctx.exp

@@ -1,6 +1,6 @@
 from types import NoneType
 
-from Source.quantumCode.AST_Scripts import AbstractProgramVisitor
+import AbstractProgramVisitor
 
 
 class QXTop:
@@ -407,6 +407,46 @@ class QXX(QXExp):
 
     def vexp(self):
         return self._v
+
+    def block(self):
+        return self._block
+
+class QXH(QXExp):
+    def __init__(self, id: str, v: QXVexp, block:str = None):
+        self._id = id
+        self._v = v
+        self._block = block
+
+    def accept(self, visitor : AbstractProgramVisitor):
+        visitor.visitX(self)
+
+    def ID(self):
+        return self._id if isinstance(self._id, str) else self._id.getText()
+
+    def vexp(self):
+        return self._v
+
+    def block(self):
+        return self._block
+
+class QXRZ(QXExp):
+    def __init__(self, id: str, v: QXVexp, v1:QXVexp, block:str = None):
+        self._id = id
+        self._v = v
+        self._num = v1
+        self._block = block
+
+    def accept(self, visitor : AbstractProgramVisitor):
+        visitor.visitRZ(self)
+
+    def ID(self):
+        return self._id if isinstance(self._id, str) else self._id.getText()
+
+    def vexp(self):
+        return self._v
+
+    def num(self):
+        return self._num
 
     def block(self):
         return self._block

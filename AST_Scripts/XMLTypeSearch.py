@@ -6,12 +6,10 @@ from types import NoneType
 
 from antlr4 import ParserRuleContext
 
-from Source.quantumCode.AST_Scripts.XMLExpParser import *
-from Source.quantumCode.AST_Scripts.XMLExpVisitor import *
-from Source.quantumCode.AST_Scripts.ProgramVisitor import ProgramVisitor
+import ProgramVisitor
 
-from Source.quantumCode.AST_Scripts import XMLProgrammer
-from Source.quantumCode.AST_Scripts.XMLProgrammer import Nat, Qty
+import XMLProgrammer
+from XMLProgrammer import Nat, Qty
 
 
 class TypeSearch(ProgramVisitor):
