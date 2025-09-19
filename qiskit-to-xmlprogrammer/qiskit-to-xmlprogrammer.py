@@ -10,55 +10,85 @@ import qiskit
 from qiskit import QuantumCircuit
 from qiskit.converters import circuit_to_dag
 from qiskit.dagcircuit import DAGInNode, DAGOpNode, DAGNode, DAGOutNode
+from qiskit.visualization import dag_drawer
+import graphviz
+import os
 
-from XMLProgrammer import QXProgram, QXQID, QXCU, QXX, QXTop, QXExp, QXH
-#from XMLProgrammer import QXRZ
+from XMLProgrammer import QXProgram, QXQID, QXCU, QXX, QXTop, QXExp, QXH, QXRZ
 
 
-# Example circuit
+# Ensure graphviz is in the PATH (for dag drawing)
+os.environ["PATH"] += os.pathsep + r"C:\Program Files\Graphviz\bin"
+
+# --------------------------- EXAMPLE CIRCUITS ---------------------------------
+
+# ----- 1: Common gates
+
 qc = QuantumCircuit(2, 2)
 qc.h(0)
 qc.cx(0, 1)
+qc.h(1)
 qc.x(1)
 qc.measure([0,1], [0,1])
-print(qc.draw())
 
-# Convert to DAG
-dagEx = circuit_to_dag(qc)
+dagEx1 = circuit_to_dag(qc)
+
+print(qc.draw())
+#qc.draw("mpl")
+dag_img = dag_drawer(dagEx1, style="color")
+dag_img.save('dagEx1.png')
+
+# ----- 2: All qiskit gates
+
+qc = QuantumCircuit(3, 1)
+qc.h(0)
+qc.cx(0, 1)
+qc.x(2)
+qc.z(2)
+qc.s(1)
+qc.t(0)
+qc.cz(1, 2)
+qc.sdg(1)
+qc.tdg(0)
+
+
+dagEx2 = circuit_to_dag(qc)
+
+print(qc.draw())
+dag_img = dag_drawer(dagEx2, style="color")
+dag_img.save('dagEx2.png')
+
+
+# ----- 3: 3-Qubit GHZ
+
+qc = QuantumCircuit(3, 0)
+qc.h(0)
+qc.cx(0, 1)
+qc.cx(1, 2)
+
+dagEx3 = circuit_to_dag(qc)
+
+print(qc.draw())
+dag_img = dag_drawer(dagEx3, style="color")
+dag_img.save('dagEx3.png')
+
 
 
 # ------------------------- DAG TO XMLPROGRAMMER -------------------------------
 
 
-class DAGVisitor:
-    def __init__(self, dag, func = "nodeToXMLProgrammer"):
+class DAGtoXMLProgrammer:
+    def __init__(self):
+        self.dag = None
+
+    def startVisit(self, dag):
         self.dag = dag
-        
-        if func == "printDAG":
-            self.func = self.printNodeAndType
-        elif func == "nodeToXMLProgrammer":
-            self.func = self.nodeToXMLProgrammer
-        else:
-            raise ValueError("Unknown function for visitor for visitor")
 
         # Dictionary mapping Qiskit qubits to XMLProgrammer qubits
         self.XMLQubits = dict()
         for qubit in dag.qubits:
             self.XMLQubits[qubit] = QXQID(str(qubit._index))
 
-
-    def printNodeAndType(self, node):
-        if isinstance(node, DAGInNode):
-            print("Input Node for wire: ", node.wire)
-        elif isinstance(node, DAGOutNode):
-            print("Output Node for wire: ", node.wire)
-        elif isinstance(node, DAGOpNode):
-            print("Operation Node: ", node.op.base_class, " named ", node.name)
-        else:
-            print("???")
-
-
-    def startVisit(self):
         self.visitedNodes = set()
         self.expList = []
         
@@ -75,50 +105,63 @@ class DAGVisitor:
             return
         else:
             self.visitedNodes.add(node)
-            self.func(node)
-            for successor in self.dag.successors(node):
+            self.nodeToXMLProgrammer(node)
+            for successor in self.dag.successors(node): # type: ignore
                 self.visitNode(successor)
 
 
     def nodeToXMLProgrammer(self, node):
-        if isinstance(node, DAGInNode):
-            pass
-        elif isinstance(node, DAGOutNode):
-            pass
-        elif isinstance(node, DAGOpNode):
+        if isinstance(node, DAGOpNode):
             inputBits = [self.XMLQubits[q] for q in node.qargs]
+            exps = []
 
-            # Map the operation to XMLProgrammer format
-            exp = None
-            # Controlled not:
-            if node.name == "cx":
-                exp = QXCU("cx", inputBits[0], QXProgram([QXX("x", inputBits[1])]))
-            elif node.name == "h":
-                exp = QXH("h", inputBits[0])
+            # H, X, Y, Z:
+            if node.name == "h":
+                exps.append(QXH("h", inputBits[0]))
             elif node.name == "x":
-                exp = QXX("x", inputBits[0])
+                exps.append(QXX("x", inputBits[0]))
+            elif node.name == "y": # Y = HXHXH
+                exps.append(QXH("h", inputBits[0]))
+                exps.append(QXX("x", inputBits[0]))
+                exps.append(QXH("h", inputBits[0]))
+                exps.append(QXX("x", inputBits[0]))
+                exps.append(QXH("h", inputBits[0]))
+            elif node.name == "z":
+                exp = QXRZ("z", inputBits[0], 180)
+
+            # Fractional phase shifts (S, SDG, T, TDG):
+            elif node.name == "s":
+                exp = QXRZ("s", inputBits[0], 90)
+            elif node.name == "sdg":
+                exp = QXRZ("sdg", inputBits[0], -90)
             elif node.name == "t":
                 exp = QXRZ("t", inputBits[0], 45)
-            elif node.name == "z":
-                exp = QXRZ("z", inputBits[0], 90)
+            elif node.name == "tdg":
+                exp = QXRZ("tdg", inputBits[0], -45)
+
+
+            # Controlled operations (CX, CZ):
+            elif node.name == "cx":
+                exps.append(QXCU("cx", inputBits[0], QXProgram([QXX("x", inputBits[1])])))
+            elif node.name == "cz":
+                exps.append(QXCU("cz", inputBits[0], QXProgram([QXRZ("z", inputBits[1], 180)])))
+            
             else:
                 print("Warning: Unrecognized operation ", node.name)
 
             # Turn the extracted operation into an expression, and add it to
             # the list of expressions
-            if exp is not None:
+            for exp in exps:
                 self.expList.append(exp)
             
             
 # ------------------------------- EXAMPLE USAGE --------------------------------
 
-# DAG Printer
-#printerVistor = DAGVisitor(dagEx, "printDAG")
-#printerVistor.startVisit()
+visitor = DAGtoXMLProgrammer()
 
-# DAG to XMLProgrammer
-xmlProgrammerVisitor = DAGVisitor(dagEx)
-xmlProgrammerVisitor.startVisit()
+visitor.startVisit(dagEx1)
+visitor.startVisit(dagEx2)
+visitor.startVisit(dagEx3)
 
 
 
