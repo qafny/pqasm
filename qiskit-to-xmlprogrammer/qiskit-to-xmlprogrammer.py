@@ -15,7 +15,7 @@ import graphviz
 import os
 import sys
 
-# sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 # current_dir = os.path.dirname(os.path.abspath(__file__))
 # sys.path.append(os.path.join(current_dir, "PQASM"))
 
@@ -102,6 +102,7 @@ class DAGtoXMLProgrammer:
 
         self.program = QXProgram(self.expList)
         print("Extracted program in XMLProgrammer format:")
+
         print(self.program)
 
         
@@ -132,17 +133,17 @@ class DAGtoXMLProgrammer:
                 exps.append(QXX("x", inputBits[0]))
                 exps.append(QXH("h", inputBits[0]))
             elif node.name == "z":
-                exp = QXRZ("z", inputBits[0], 180)
+                exps.append(QXRZ("z", inputBits[0], 180))
 
             # Fractional phase shifts (S, SDG, T, TDG):
             elif node.name == "s":
-                exp = QXRZ("s", inputBits[0], 90)
+                exps.append(QXRZ("s", inputBits[0], 90))
             elif node.name == "sdg":
-                exp = QXRZ("sdg", inputBits[0], -90)
+                exps.append(QXRZ("sdg", inputBits[0], -90))
             elif node.name == "t":
-                exp = QXRZ("t", inputBits[0], 45)
+                exps.append(QXRZ("t", inputBits[0], 45))
             elif node.name == "tdg":
-                exp = QXRZ("tdg", inputBits[0], -45)
+                exps.append(QXRZ("tdg", inputBits[0], -45))
 
 
             # Controlled operations (CX, CZ):
