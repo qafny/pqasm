@@ -1,7 +1,6 @@
 from types import NoneType
 
-import AbstractProgramVisitor
-
+from AST_Scripts.AbstractProgramVisitor import AbstractProgramVisitor
 
 class QXTop:
 

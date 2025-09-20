@@ -13,9 +13,14 @@ from qiskit.dagcircuit import DAGInNode, DAGOpNode, DAGNode, DAGOutNode
 from qiskit.visualization import dag_drawer
 import graphviz
 import os
+import sys
 
-from XMLProgrammer import QXProgram, QXQID, QXCU, QXX, QXTop, QXExp, QXH, QXRZ
+# sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+# current_dir = os.path.dirname(os.path.abspath(__file__))
+# sys.path.append(os.path.join(current_dir, "PQASM"))
 
+
+from AST_Scripts.XMLProgrammer import QXProgram, QXQID, QXCU, QXX, QXH, QXRZ
 
 # Ensure graphviz is in the PATH (for dag drawing)
 os.environ["PATH"] += os.pathsep + r"C:\Program Files\Graphviz\bin"
