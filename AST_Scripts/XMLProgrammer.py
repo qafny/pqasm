@@ -23,6 +23,14 @@ class QXProgram(QXTop):
     def exp(self, i:int=None):
         return self._exps[i] if len(self._exps) > i else None
 
+    def __str__(self):
+        s = "["
+        for e in self._exps:
+            s += str(e) + ", "
+        s = s[:-2]
+        s += "]"
+        return s
+
 
 class QXType(QXTop):
 
@@ -105,6 +113,9 @@ class QXQID(QXElem, QXVexp):
     def rpf_for(self):
         return self._rpf_for
 
+    def __str__(self):
+        return f"QXQID(id={self._id})"
+
 
 class QXLet(QXExp):
     def __init__(self, id: str, ids: [QXIDExp], p: QXProgram):
@@ -165,6 +176,9 @@ class QXCU(QXExp):
 
     def block(self):
         return self._block
+
+    def __str__(self):
+        return f"QXCU(id={self._id}, control={self._v}, prog={self._prog})"
 
 
 class QXIf(QXExp):
@@ -411,6 +425,9 @@ class QXX(QXExp):
     def block(self):
         return self._block
 
+    def __str__(self):
+        return f"QXX(id={self._id}, v={self._v})"
+
 class QXH(QXExp):
     def __init__(self, id: str, v: QXVexp, block:str = None):
         self._id = id
@@ -428,6 +445,9 @@ class QXH(QXExp):
 
     def block(self):
         return self._block
+
+    def __str__(self):
+        return f"QXH(id={self._id}, v={self._v})"
 
 class QXRZ(QXExp):
     def __init__(self, id: str, v: QXVexp, v1:QXVexp, block:str = None):
@@ -450,6 +470,9 @@ class QXRZ(QXExp):
 
     def block(self):
         return self._block
+
+    def __str__(self):
+        return f"QXRZ(id={self._id}, v={self._v}, angle={self.num})"
 
 class QXSR(QXExp):
     def __init__(self, id: str, v: QXVexp, block:str = None):
