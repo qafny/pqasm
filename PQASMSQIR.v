@@ -2,14 +2,16 @@ Require Import Reals.
 Require Import Psatz.
 Require Import Complex.
 Require Import SQIR.
-Require Import VectorStates DensitySem UnitaryOps Coq.btauto.Btauto Coq.NArith.Nnat Permutation. 
+Require Import VectorStates NDSem UnitaryOps Coq.btauto.Btauto Coq.NArith.Nnat Permutation. 
 Require Import Dirac.
 Require Import QPE.
 Require Import BasicUtility.
 Require Import Classical_Prop.
 Require Import MathSpec.
 Require Import PQASM.
-Require Import PQASMProof.
+Require Import RZArith.
+Require Import QafnySyntax.
+Require Import LocusSem.
 (**********************)
 (** Locus Definitions **)
 (**********************)
@@ -26,6 +28,89 @@ Check OQASMProof.vars.
 
 (avs: nat -> posi)
 *)
+
+Definition rz_ang (n:nat) : R := ((2%R * PI)%R / 2%R^n).
+
+Definition rrz_ang (n:nat) : R := ((2%R * PI)%R - ((2%R * PI)%R / 2%R^n)).
+
+(*
+Fixpoint controlled_rotations_gen (f : posi -> nat) (dim:nat) (x:list posi) (n : nat) (i:nat) : base_ucom dim :=
+  match n with
+  | 0 | 1 => SQIR.ID ((f x) + i)
+  | S m  => SQIR.useq (controlled_rotations_gen f dim x m i)
+                 (control ((f x) + (m+i)) (SQIR.Rz (rz_ang n) ((f x) + i)))
+  end.
+
+Fixpoint QFT_gen (f : var -> nat) (dim:nat) (x:list posi) (n : nat) (size:nat) : base_ucom dim :=
+  match x with
+  | []    => SQIR.ID (f x)
+  | S m => SQIR.useq  (QFT_gen f dim x m size)
+             (SQIR.useq (SQIR.H ((f x) + m)) ((controlled_rotations_gen f dim x (size-m) m)))
+  end.
+
+Check rz_adder x (length p) (nat2fb n).
+*)
+
+
+Fixpoint nH (dim:nat) (f : posi -> nat) (l:list posi) : base_ucom dim :=
+     match l with [] => SQIR.SKIP
+               | x::xl => SQIR.useq (SQIR.H (f x)) (nH dim f xl)
+     end.
+
+Definition measure' {dim} n : base_com dim := (meas n skip skip).
+(* avs is to support the compilation of OQASM, it is id with f. *)
+Fixpoint trans_n_meas {dim} (f : posi -> nat) (l:list posi) : base_com dim :=
+  match l with [] => SQIR.SKIP | x::xl => measure'(f x); trans_n_meas f xl end.
+
+Definition trans_mu  (n:nat) (f : posi -> nat) (e:mu) := SQIR.SKIP.
+
+
+Fixpoint nH (l:list posi) :=
+  match l with [] => PSKIP
+             | x::xs => PSeq (AppSU (Index (fst x) (Num (snd x)))) (nH xs)
+  end.
+
+Fixpoint toLocus (l:list posi) :=
+  match l with [] => []
+             | x::xs -> (fst x, snd x, snd x + 1)
+  end.
+
+
+Fixpoint trans_exp (e:exp) :=
+   match e with ESKIP => PSKIP
+              | Next e => trans_iota n f e
+              | Had b => nH b
+              | New b => PSKIP
+              | ESeq l r => PSeq (trans_exp l) (trans_exp r)
+              | Meas x qs e1 => Let x  n f qs
+   end.
+
+
+Inductive exp := ESKIP | Next (p: iota) | Had (b:list posi) | New (b:list posi) 
+| ESeq (k: exp) (m: exp) | Meas (x:var) (qs:list posi) (e1:exp) | IFa (k: cbexp) (op1: exp) (op2: exp).
+
+
+
+(*add mod multiplication here, compilation to OQASM*)
+Inductive mu := Add (ps: list posi) (n:(nat)) (* we add nat to the bitstring represenation of ps *)
+              | Less (ps : list posi) (n:(nat)) (p:posi) (* we compare ps with n (|ps| < n) store the boolean result in p. *)
+              | Equal (ps : list posi) (n:(nat)) (p:posi) (* we compare ps with n (|ps| = n) store the boolean result in p. *)
+              | ModMult (ps : list posi) (n:(nat)) (m: (nat))
+              | Equal_posi_list (ps qs: list posi) (p:posi).
+
+Fixpoint trans_iota  (n:nat) (f : posi -> nat) (e:iota) :=
+   match e with ISeq l r => SQIR.useq (trans_iota n f l) (trans_iota n f r)
+              | ICU x y => control (f x) (trans_iota n f y)
+              | Ora e => trans_mu n f e
+              | Ry p e => SQIR.Ry (rz_ang e) (f p)
+   end.
+
+
+
+Inductive exp := ESKIP | Next (p: iota) | Had (b:list posi) | New (b:list posi) 
+| ESeq (k: exp) (m: exp) | Meas (x:var) (qs:list posi) (e1:exp) | IFa (k: cbexp) (op1: exp) (op2: exp).
+
+(* Finished here. *)
 
 
 Fixpoint nX (f : var -> nat) (dim:nat) (x:var) (n:nat) : base_ucom dim :=
@@ -51,24 +136,9 @@ Fixpoint gen_srr_gate' (f:var -> nat) (dim:nat) (x:var) (n:nat) (size:nat) : bas
    end.
 Definition gen_srr_gate (f:var -> nat) (dim:nat) (x:var) (n:nat) := gen_srr_gate' f dim x (S n) (S n).
 
-Fixpoint controlled_rotations_gen (f : var -> nat) (dim:nat) (x:var) (n : nat) (i:nat) : base_ucom dim :=
-  match n with
-  | 0 | 1 => SQIR.ID ((f x) + i)
-  | S m  => SQIR.useq (controlled_rotations_gen f dim x m i)
-                 (control ((f x) + (m+i)) (SQIR.Rz (rz_ang n) ((f x) + i)))
-  end.
 
-Fixpoint QFT_gen (f : var -> nat) (dim:nat) (x:var) (n : nat) (size:nat) : base_ucom dim :=
-  match n with
-  | 0    => SQIR.ID (f x)
-  | S m => SQIR.useq  (QFT_gen f dim x m size)
-             (SQIR.useq (SQIR.H ((f x) + m)) ((controlled_rotations_gen f dim x (size-m) m)))
-  end.
 
-Fixpoint nH (f : var -> nat) (dim:nat) (x:var) (n:nat) (b:nat) : base_ucom dim :=
-     match n with 0 => SQIR.ID (f x)
-               | S m => SQIR.useq (nH f dim x m b) (SQIR.H ((f x) + (b+m))) 
-     end.
+
 
 Definition trans_qft (f:var -> nat) size (dim:nat) (x:var) (b:nat) : (base_ucom dim) :=
           (SQIR.useq (QFT_gen f dim x b b) (nH f dim x (size - b) b)).
@@ -76,10 +146,7 @@ Definition trans_qft (f:var -> nat) size (dim:nat) (x:var) (b:nat) : (base_ucom 
 Definition trans_rqft (f:var -> nat) (size:nat) (dim:nat) (x:var) (b:nat) : (base_ucom dim) :=
              (invert (SQIR.useq (QFT_gen f dim x b b) (nH f dim x (size - b) b))).
 
-Definition measure' {dim} n : base_com dim := (meas n skip skip).
-(* avs is to support the compilation of OQASM, it is id with f. *)
-Fixpoint trans_n_meas {dim} (n:nat) (p:nat) : base_com dim :=
-  match n with 0 => SQIR.ID (p) | S m => measure' (p+m);trans_n_meas m p end.
+
 
 
 Definition diff (f : var -> nat) (dim:nat) (x:var) (n : nat) : base_com dim := 

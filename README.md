@@ -25,8 +25,13 @@ eval $(opam env)
 # install Coq -- this will take a while!
 opam install coq
 
-# install coq-quickchick
+# ensure opam can find coq-quickchick
+opam repo add coq-released https://coq.inria.fr/opam/released
+opam update
+
+# install coq-quickchick and ocamlbuild
 opam install coq-quickchick
+opam install ocamlbuild
 ```
 
 *Notes*:
