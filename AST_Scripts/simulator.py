@@ -46,6 +46,23 @@ class CoqQVal(CoqVal):
         return self.n
 
 
+
+class CoqYVal(CoqVal):
+
+    def __init__(self, r1: int, r2: float):
+        self.r1 = r1
+        self.r2 = r2
+
+    def getPhase(self):
+        return self.r1
+
+    def getLocal(self):
+        return self.r2
+
+    def addLocal(self, r):
+        self.r2 += r
+
+
 """
 Helper Functions
 """
@@ -289,6 +306,14 @@ class Simulator(ProgramVisitor):
             times_rotate(val, p, val.getNum())
         else:
             times_r_rotate(val, p, val.getNum())
+
+    def visitRY(self, ctx: XMLProgrammer.QXRY):
+        vx = ctx.ID()
+        val = ctx.vexp().accept(self)
+        p = ctx.num().accept(self)  # this will pass the visitor to the child of ctx
+        x = self.state.get(vx)[0]
+        if isinstance(x.getBits()[val], CoqYVal):
+            x.getBits()[val].addLocal(p)
 
     # we will first get the position in st and check if the state is 0 or 1,
     # then decide if we go to recursively call ctx.exp

@@ -44,6 +44,8 @@ class ProgramVisitor(AbstractProgramVisitor):
                 return self.visitX(ctx)
             case QXH():
                 return self.visitH(ctx)
+            case QXRY():
+                return self.visitRY(ctx)
             case QXRZ():
                 return self.visitRZ(ctx)
             case QXSR():
@@ -132,6 +134,10 @@ class ProgramVisitor(AbstractProgramVisitor):
         ctx.vexp().accept(self)
 
     def visitRZ(self, ctx: XMLProgrammer.QXRZ):
+        ctx.vexp().accept(self)
+        ctx.num().accept(self)
+
+    def visitRY(self, ctx: XMLProgrammer.QXRY):
         ctx.vexp().accept(self)
         ctx.num().accept(self)
 
