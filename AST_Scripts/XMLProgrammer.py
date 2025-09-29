@@ -476,6 +476,32 @@ class QXRZ(QXExp):
     def __str__(self):
         return f"QXRZ(id={self._id}, v={self._v}, angle={self._num})"
 
+
+class QXRY(QXExp):
+    def __init__(self, id: str, v: QXVexp, v1:QXVexp, block:str = None):
+        self._id = id
+        self._v = v
+        self._num = v1
+        self._block = block
+
+    def accept(self, visitor : AbstractProgramVisitor):
+        visitor.visitRZ(self)
+
+    def ID(self):
+        return self._id if isinstance(self._id, str) else self._id.getText()
+
+    def vexp(self):
+        return self._v
+
+    def num(self):
+        return self._num
+
+    def block(self):
+        return self._block
+
+    def __str__(self):
+        return f"QXRZ(id={self._id}, v={self._v}, angle={self.num})"
+
 class QXSR(QXExp):
     def __init__(self, id: str, v: QXVexp, block:str = None):
         self._id = id
