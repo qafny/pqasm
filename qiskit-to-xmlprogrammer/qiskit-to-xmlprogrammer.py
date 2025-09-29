@@ -6,6 +6,7 @@ required for "XMLProgrammer.py".
 
 """
 
+import math
 import qiskit
 from qiskit import QuantumCircuit
 from qiskit.converters import circuit_to_dag
@@ -127,7 +128,7 @@ class DAGtoXMLProgrammer:
                 exps.append(QXH("h", inputBits[0]))
             elif node.name == "x":
                 exps.append(QXX("x", inputBits[0]))
-            elif node.name == "y": # Y = HXHXH
+            elif node.name == "y":
                 exps.append(QXRY("y", inputBits[0], 90))
             elif node.name == "z":
                 exps.append(QXRZ("z", inputBits[0], 180))
@@ -141,6 +142,14 @@ class DAGtoXMLProgrammer:
                 exps.append(QXRZ("t", inputBits[0], 45))
             elif node.name == "tdg":
                 exps.append(QXRZ("tdg", inputBits[0], -45))
+
+            # General rotations (RX, RY, RZ):
+            # elif node.name == "rx":
+            #     exps.append(QXRX("rx", inputBits[0], node.params[0]*180/math.pi))
+            elif node.name == "ry":
+                exps.append(QXRY("ry", inputBits[0], node.params[0]*180/math.pi))
+            elif node.name == "rz":
+                exps.append(QXRZ("rz", inputBits[0], node.params[0]*180/math.pi))
 
 
             # Controlled operations (CX, CZ):
