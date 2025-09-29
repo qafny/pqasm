@@ -20,7 +20,7 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 # sys.path.append(os.path.join(current_dir, "PQASM"))
 
 
-from AST_Scripts.XMLProgrammer import QXProgram, QXQID, QXCU, QXX, QXH, QXRZ
+from AST_Scripts.XMLProgrammer import QXProgram, QXQID, QXCU, QXX, QXH, QXRZ, QXRY
 
 # Ensure graphviz is in the PATH (for dag drawing)
 os.environ["PATH"] += os.pathsep + r"C:\Program Files\Graphviz\bin"
@@ -55,6 +55,7 @@ qc.t(0)
 qc.cz(1, 2)
 qc.sdg(1)
 qc.tdg(0)
+qc.y(0)
 
 
 dagEx2 = circuit_to_dag(qc)
@@ -127,11 +128,7 @@ class DAGtoXMLProgrammer:
             elif node.name == "x":
                 exps.append(QXX("x", inputBits[0]))
             elif node.name == "y": # Y = HXHXH
-                exps.append(QXH("h", inputBits[0]))
-                exps.append(QXX("x", inputBits[0]))
-                exps.append(QXH("h", inputBits[0]))
-                exps.append(QXX("x", inputBits[0]))
-                exps.append(QXH("h", inputBits[0]))
+                exps.append(QXRY("y", inputBits[0], 90))
             elif node.name == "z":
                 exps.append(QXRZ("z", inputBits[0], 180))
 
