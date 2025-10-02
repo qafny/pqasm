@@ -202,4 +202,10 @@ visitor.startVisit(qcEx4)
 
 
 
+# TODO: currently decomposing even converts gates like H, X, CX into U, which can convert H or similar into >=3 gates.
+# Try to not decompose beyond gates we already have.
+
+
+
+
 
