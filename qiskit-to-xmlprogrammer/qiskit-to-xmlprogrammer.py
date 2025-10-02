@@ -15,6 +15,7 @@ from qiskit.visualization import dag_drawer
 import graphviz
 import os
 import sys
+from qiskit.circuit.library.arithmetic import FullAdderGate
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 # current_dir = os.path.dirname(os.path.abspath(__file__))
@@ -79,6 +80,29 @@ print(qc.draw())
 dag_img = dag_drawer(dagEx3, style="color")
 dag_img.save('dagEx3.png')
 
+
+# -------------------------- QISKIT LIBRARY CIRCUITS ---------------------------
+
+# IMPORTANT: Decompose the library circuit into basic gates, so the visitor can handle it
+def decomposeToGates(qc):
+    prev_qc = qc
+    while True:
+        decomp = prev_qc.decompose()
+        if decomp == prev_qc:
+            break
+        prev_qc = decomp
+    return decomp
+
+
+# 1: Half Adder
+
+# Create a quantum circuit with 4 qubits:
+# 1, 2 are inputs qubits, 3 is carry-in, 4 is the output (a+b+carry-in)
+qc = QuantumCircuit(4)  # 4 qubits for a single 1-bit full adder
+qc.append(FullAdderGate(num_state_qubits=1), [0, 1, 2, 3])  # no argument, just 1-bit adder
+decomp = decomposeToGates(qc)
+print(decomp.draw())
+dagEx4 = circuit_to_dag(decomp)
 
 
 # ------------------------- DAG TO XMLPROGRAMMER -------------------------------
@@ -174,6 +198,7 @@ visitor = DAGtoXMLProgrammer()
 visitor.startVisit(dagEx1)
 visitor.startVisit(dagEx2)
 visitor.startVisit(dagEx3)
+visitor.startVisit(dagEx4)
 
 
 
