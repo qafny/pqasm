@@ -38,12 +38,11 @@ qc.h(1)
 qc.x(1)
 qc.measure([0,1], [0,1])
 
-dagEx1 = circuit_to_dag(qc)
-
 print(qc.draw())
-#qc.draw("mpl")
-dag_img = dag_drawer(dagEx1, style="color")
-dag_img.save('dagEx1.png')
+qcEx1 = qc.copy()
+
+# dag_img = dag_drawer(dagEx1, style="color")
+# dag_img.save('dagEx1.png')
 
 # ----- 2: All qiskit gates
 
@@ -59,13 +58,8 @@ qc.sdg(1)
 qc.tdg(0)
 qc.y(0)
 
-
-dagEx2 = circuit_to_dag(qc)
-
 print(qc.draw())
-dag_img = dag_drawer(dagEx2, style="color")
-dag_img.save('dagEx2.png')
-
+qcEx2 = qc.copy()
 
 # ----- 3: 3-Qubit GHZ
 
@@ -74,16 +68,24 @@ qc.h(0)
 qc.cx(0, 1)
 qc.cx(1, 2)
 
-dagEx3 = circuit_to_dag(qc)
-
 print(qc.draw())
-dag_img = dag_drawer(dagEx3, style="color")
-dag_img.save('dagEx3.png')
+qcEx3 = qc.copy()
 
 
 # -------------------------- QISKIT LIBRARY CIRCUITS ---------------------------
 
-# IMPORTANT: Decompose the library circuit into basic gates, so the visitor can handle it
+# 1: Half Adder
+
+# Create a quantum circuit with 4 qubits:
+# 1, 2 are inputs qubits, 3 is carry-in, 4 is the output (a+b+carry-in)
+qc = QuantumCircuit(4)  # 4 qubits for a single 1-bit full adder
+qc.append(FullAdderGate(num_state_qubits=1), [0, 1, 2, 3])  # no argument, just 1-bit adder
+
+print(qc.draw())
+qcEx4 = qc.copy()
+
+# ------------------------- DAG TO XMLPROGRAMMER -------------------------------
+
 def decomposeToGates(qc):
     prev_qc = qc
     while True:
@@ -94,30 +96,17 @@ def decomposeToGates(qc):
     return decomp
 
 
-# 1: Half Adder
-
-# Create a quantum circuit with 4 qubits:
-# 1, 2 are inputs qubits, 3 is carry-in, 4 is the output (a+b+carry-in)
-qc = QuantumCircuit(4)  # 4 qubits for a single 1-bit full adder
-qc.append(FullAdderGate(num_state_qubits=1), [0, 1, 2, 3])  # no argument, just 1-bit adder
-decomp = decomposeToGates(qc)
-print(decomp.draw())
-dagEx4 = circuit_to_dag(decomp)
-
-
-# ------------------------- DAG TO XMLPROGRAMMER -------------------------------
-
-
-class DAGtoXMLProgrammer:
+class QCtoXMLProgrammer:
     def __init__(self):
         self.dag = None
 
-    def startVisit(self, dag):
-        self.dag = dag
+    def startVisit(self, qc):
+        qc = decomposeToGates(qc)
+        self.dag = circuit_to_dag(qc)
 
         # Dictionary mapping Qiskit qubits to XMLProgrammer qubits
         self.XMLQubits = dict()
-        for qubit in dag.qubits:
+        for qubit in self.dag.qubits:
             self.XMLQubits[qubit] = QXQID(str(qubit._index))
 
         self.visitedNodes = set()
@@ -175,6 +164,12 @@ class DAGtoXMLProgrammer:
             elif node.name == "rz":
                 exps.append(QXRZ("rz", inputBits[0], node.params[0]*180/math.pi))
 
+            # Universal single-qubit gate (U):
+            elif node.name == "u":
+                # U(a, b, c) = RZ(a) RY(b) RZ(c)
+                exps.append(QXRZ("rz", inputBits[0], node.params[0]*180/math.pi))
+                exps.append(QXRY("ry", inputBits[0], node.params[1]*180/math.pi))
+                exps.append(QXRZ("rz", inputBits[0], node.params[2]*180/math.pi))
 
             # Controlled operations (CX, CZ):
             elif node.name == "cx":
@@ -193,12 +188,16 @@ class DAGtoXMLProgrammer:
             
 # ------------------------------- EXAMPLE USAGE --------------------------------
 
-visitor = DAGtoXMLProgrammer()
+visitor = QCtoXMLProgrammer()
 
-visitor.startVisit(dagEx1)
-visitor.startVisit(dagEx2)
-visitor.startVisit(dagEx3)
-visitor.startVisit(dagEx4)
+print("----- Example 1 -----")
+visitor.startVisit(qcEx1)
+print("----- Example 2 -----")
+visitor.startVisit(qcEx2)
+print("----- Example 3 -----")
+visitor.startVisit(qcEx3)
+print("----- Example 4 -----")
+visitor.startVisit(qcEx4)
 
 
 
