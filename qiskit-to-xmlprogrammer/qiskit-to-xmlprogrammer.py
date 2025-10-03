@@ -37,7 +37,7 @@ qc.cx(0, 1)
 qc.h(1)
 qc.x(1)
 qc.measure([0,1], [0,1])
-
+print('---circuit 1---')
 print(qc.draw())
 qcEx1 = qc.copy()
 
@@ -57,7 +57,7 @@ qc.cz(1, 2)
 qc.sdg(1)
 qc.tdg(0)
 qc.y(0)
-
+print('---circuit 2---')
 print(qc.draw())
 qcEx2 = qc.copy()
 
@@ -67,7 +67,7 @@ qc = QuantumCircuit(3, 0)
 qc.h(0)
 qc.cx(0, 1)
 qc.cx(1, 2)
-
+print('---circuit 3---')
 print(qc.draw())
 qcEx3 = qc.copy()
 
@@ -80,9 +80,37 @@ qcEx3 = qc.copy()
 # 1, 2 are inputs qubits, 3 is carry-in, 4 is the output (a+b+carry-in)
 qc = QuantumCircuit(4)  # 4 qubits for a single 1-bit full adder
 qc.append(FullAdderGate(num_state_qubits=1), [0, 1, 2, 3])  # no argument, just 1-bit adder
-
+print('---circuit 4---')
 print(qc.draw())
 qcEx4 = qc.copy()
+
+# 2: linear pauli rotations
+# based on https://github.com/Qiskit/qiskit/blob/main/qiskit/circuit/library/arithmetic/linear_pauli_rotations.py
+num_qubits = 3
+circuit = QuantumCircuit(num_qubits)
+
+# build the circuit
+qr_state = circuit.qubits[:num_qubits - 1]
+qr_target = circuit.qubits[-1]
+circuit.rx(0, qr_target)
+# if self.basis == "x":
+#     circuit.rx(self.offset, qr_target)
+# elif self.basis == "y":
+#     circuit.ry(self.offset, qr_target)
+# else:  # 'Z':
+#     circuit.rz(self.offset, qr_target)
+
+# for i, q_i in enumerate(qr_state):
+#     if self.basis == "x":
+#         circuit.crx(self.slope * pow(2, i), q_i, qr_target)
+#     elif self.basis == "y":
+#         circuit.cry(self.slope * pow(2, i), q_i, qr_target)
+#     else:  # 'Z'
+#         circuit.crz(self.slope * pow(2, i), q_i, qr_target)
+print('---circuit 5---')
+print(circuit.draw())
+qcEx5 = circuit.copy()
+
 
 # ------------------------- DAG TO XMLPROGRAMMER -------------------------------
 
@@ -198,6 +226,8 @@ print("----- Example 3 -----")
 visitor.startVisit(qcEx3)
 print("----- Example 4 -----")
 visitor.startVisit(qcEx4)
+print("----- Example 5 -----")
+visitor.startVisit(qcEx5)
 
 
 
