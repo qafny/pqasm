@@ -36,13 +36,13 @@ OQIMP.v
 OracleExample.v
 ArithTesting.v
 
-# ExtrOQASM.v
+PQASM.v
+PQASMProof.v
+PTesting.v
+
+ExtrOQASM.v
 
 # QafnySyntax.v
 # LocusDef.v
 # LocusKind.v
 # LocusSem.v
-
-PQASM.v
-PQASMProof.v
-PTesting.v
