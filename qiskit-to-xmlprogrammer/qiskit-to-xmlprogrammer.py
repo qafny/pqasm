@@ -86,13 +86,15 @@ qcEx4 = qc.copy()
 
 # 2: linear pauli rotations
 # based on https://github.com/Qiskit/qiskit/blob/main/qiskit/circuit/library/arithmetic/linear_pauli_rotations.py
-num_qubits = 3
+num_qubits = 6
 circuit = QuantumCircuit(num_qubits)
 
 # build the circuit
 qr_state = circuit.qubits[:num_qubits - 1]
 qr_target = circuit.qubits[-1]
 circuit.rx(0, qr_target)
+for i, q_i in enumerate(qr_state):
+    circuit.crx(1 * pow(2, i), q_i, qr_target)
 # if self.basis == "x":
 #     circuit.rx(self.offset, qr_target)
 # elif self.basis == "y":
