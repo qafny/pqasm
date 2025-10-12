@@ -1,7 +1,6 @@
 from types import NoneType
 
-import AbstractProgramVisitor
-
+from AST_Scripts.AbstractProgramVisitor import AbstractProgramVisitor
 
 class QXTop:
 
@@ -280,6 +279,9 @@ class QXNum(QXElem, QXVexp):
 
     def rec(self):
         return self._rec
+    
+    def __str__(self):
+        return f"QXNum({self._v})"
 
 
 
@@ -472,7 +474,7 @@ class QXRZ(QXExp):
         return self._block
 
     def __str__(self):
-        return f"QXRZ(id={self._id}, v={self._v}, angle={self.num})"
+        return f"QXRZ(id={self._id}, v={self._v}, angle={self._num})"
 
 
 class QXRY(QXExp):
@@ -498,7 +500,7 @@ class QXRY(QXExp):
         return self._block
 
     def __str__(self):
-        return f"QXRZ(id={self._id}, v={self._v}, angle={self.num})"
+        return f"QXRY(id={self._id}, v={self._v}, angle={self._num})"
 
 class QXSR(QXExp):
     def __init__(self, id: str, v: QXVexp, block:str = None):

@@ -28,9 +28,6 @@ externals/SQIR/examples/shor/extraction/ExtrOcamlR.v
 BasicUtility.v
 MathSpec.v
 OQASM.v
-PQASM.v
-PTesting.v
-PQASMProof.v
 OQASMProof.v
 Testing.v
 CLArith.v
@@ -38,9 +35,14 @@ RZArith.v
 OQIMP.v
 OracleExample.v
 ArithTesting.v
+
+PQASM.v
+PQASMProof.v
+PTesting.v
+
 ExtrOQASM.v
 
-QafnySyntax.v
-LocusDef.v
-LocusKind.v
-LocusSem.v
+# QafnySyntax.v
+# LocusDef.v
+# LocusKind.v
+# LocusSem.v
