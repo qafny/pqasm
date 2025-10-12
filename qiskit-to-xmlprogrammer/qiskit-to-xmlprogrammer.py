@@ -8,6 +8,7 @@ required for "XMLProgrammer.py".
 
 import math
 import qiskit
+from qiskit import transpile
 from qiskit import QuantumCircuit
 from qiskit.converters import circuit_to_dag
 from qiskit.dagcircuit import DAGInNode, DAGOpNode, DAGNode, DAGOutNode
@@ -116,16 +117,12 @@ qcEx5 = circuit.copy()
 
 # ------------------------- DAG TO XMLPROGRAMMER -------------------------------
 
+supportedGates = ['h','x','y','z','s','sdg','t','tdg','rx','ry','rz','u','cx','cz']
+ignoredGates = ['measure']
+
 def decomposeToGates(qc):
-    prev_qc = qc
-    while True:
-        decomp = prev_qc.decompose()
-        if decomp == prev_qc:
-            break
-        prev_qc = decomp
-    return decomp
-
-
+    return transpile(qc, basis_gates=supportedGates + ignoredGates)
+   
 class QCtoXMLProgrammer:
     def __init__(self):
         self.dag = None
@@ -230,14 +227,6 @@ print("----- Example 4 -----")
 visitor.startVisit(qcEx4)
 print("----- Example 5 -----")
 visitor.startVisit(qcEx5)
-
-
-
-
-# TODO: currently decomposing even converts gates like H, X, CX into U, which can convert H or similar into >=3 gates.
-# Try to not decompose beyond gates we already have.
-
-
 
 
 
