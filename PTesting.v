@@ -28,9 +28,67 @@ Local Open Scope nat_scope.
 (* Testing Semantics. *)
 
 
-(* need to redefine basis_val
-Inductive basis_val := Nval (b:bool) | Rval (n:rz_val). (*same as PQASM, overrides Testing definition*)
+(* 
+Define the equivalent testing syntax and eta_state
 *)
+Inductive mu_a := TAdd (ps: var) (n:(nat)) (* we add nat to the bitstring represenation of ps *)
+              | TLess (ps : var) (n:(nat)) (p:posi) (* we compare ps with n (|ps| < n) store the boolean result in p. *)
+              | TEqual (ps : var) (n:(nat)) (p:posi) (* we compare ps with n (|ps| = n) store the boolean result in p. *)
+              | TModMult (ps : var) (n:(nat)) (m: (nat))
+              | TEqual_posi_list (ps qs: var) (p:posi).
+
+Inductive iota_a:= TISeq (k: iota_a) (m: iota_a) 
+                 | TICU (x:posi) (y:iota_a)
+                 | TOra (e:mu_a) 
+                 | TRy (p: posi) (r: rz_val_PQASM).
+
+Coercion TOra : mu_a >-> iota_a.
+
+Inductive exp_a := TSKIP | TNext (p: iota_a) | THad (b:var) | TNew (b:var) (n:nat) 
+| TSeq (k: exp_a) (m: exp_a) | TMeas (x:var) (qs:var) (e1:exp_a) | TIFa (k: cbexp) (op1: exp_a) (op2: exp_a).
+
+Coercion TNext : iota_a >-> exp_a.
+Notation "e0 {;} e1" := (TSeq e0 e1) (at level 50) : exp_scope.
+
+Inductive basis_val_a := NvalA (b:N) | RvalA (f:nat -> nat).
+
+Definition eta_state_a : Type := var -> basis_val_a.
+
+Definition grab_nval (b:basis_val_a) := match b with NvalA b => b | RvalA f => (N.of_nat 0) end.
+Definition update_nval (st: eta_state_a) (x:var) (n:N) := update st x (NvalA n).
+
+Definition allZero : nat -> nat := fun _ => 0.
+
+Definition ry_rotate_a (st:eta_state_a) (p:posi) (r:rz_val_PQASM) (rmax:nat): eta_state_a :=
+   match st (fst p) with  NvalA b2 => if N.testbit b2 (N.of_nat (snd p))
+                                     then update st (fst p) (RvalA (update allZero (snd p) (angle_sub (pi32 rmax) r rmax)))
+                                     else update st (fst p) (RvalA (update allZero (snd p) r))
+                      | RvalA r1 => update st (fst p) (RvalA (update r1 (snd p) (angle_sum (r1 (snd p)) r rmax)))
+   end.
+
+
+Definition mu_handling_a (m: mu_a) (st: eta_state_a) : eta_state_a :=
+  match m with 
+  | TAdd ps n => update_nval st ps ((grab_nval (st ps)) + (N.of_nat n))
+  | TLess ps n p => if N.leb (grab_nval (st ps)) (N.of_nat n)
+                     then update_nval st (fst p) (N.lxor (grab_nval (st ps)) (N.pow 2 (N.of_nat (snd p)))) 
+                     else st
+  | TEqual ps n p => if N.eqb (grab_nval (st ps)) (N.of_nat n) 
+                    then update_nval st (fst p) (N.lxor (grab_nval (st ps)) (N.pow 2 (N.of_nat (snd p)))) else st
+  | TModMult ps n m =>  update_nval st ps ((N.of_nat n * (grab_nval (st ps))) mod (N.of_nat m))
+  | TEqual_posi_list ps qs p =>if N.eqb (grab_nval (st ps)) (grab_nval (st qs)) 
+                 then update_nval st (fst p) (N.lxor (grab_nval (st ps)) (N.pow 2 (N.of_nat (snd p)))) else st
+  end.
+Fixpoint instr_sem_a (env:var -> nat) (e:iota_a) (st: eta_state_a): eta_state_a :=
+   match e with 
+   | TRy p r => ry_rotate_a st p r (env (fst p)) 
+   | TISeq a b => instr_sem_a env b (instr_sem_a env a st)
+   | TOra m => mu_handling_a m st
+  | TICU x y => match st (fst x) with 
+      | RvalA r =>  st 
+      | NvalA v => if N.testbit v (N.of_nat (snd x)) then instr_sem_a env y st else st
+        end  
+   end.
 
 Fixpoint eval_aexp (env: (var -> nat)) (e:aexp) :=
  match e with BA x => env x
@@ -44,40 +102,46 @@ Definition eval_bexp (env: (var -> nat)) (e:cbexp) :=
              | CLt a b => (eval_aexp env a) <? (eval_aexp env b)
   end.
 
-Definition tstate : Type := list posi * eta_state.
+Definition tstate : Type := (var -> nat) * eta_state_a.
 
 Definition fstate : Type := (var -> nat) * tstate.
 
-Definition new_env (x:var) (qs:list posi) (st:fstate) :=
-    update (fst st) x (a_nat2fb (posi_list_to_bitstring qs (snd (snd st))) (length qs)).
-   
+Definition new_env (x:var) (qs:nat) (st:var -> nat) := update st x qs.
 
-Definition add_list (qs:list posi) (st:fstate) :=
-   (fst st, (qs ++ fst (snd st), snd (snd st))).
-
-Fixpoint prog_sem_fix (rmax: nat) (e: exp)(st: fstate) : fstate := match e with 
-| Next p => (fst st, (fst (snd st),instr_sem rmax p (snd (snd st))))
-| ESeq k m => prog_sem_fix rmax m (prog_sem_fix rmax k st)
-| IFa k op1 op2=> if (eval_bexp (fst st) k) then (prog_sem_fix rmax op1 st) else (prog_sem_fix rmax op2 st)
-| ESKIP => st
-| Had b => st
-| New b => add_list b st
-| Meas x qs e1 => prog_sem_fix rmax e1 ((new_env x qs st),(set_diff_posi (fst (snd st)) qs, snd (snd st)))
+Fixpoint prog_sem_fix (e: exp_a)(st: fstate) : fstate := match e with 
+| TNext p => (fst st, (fst (snd st) , instr_sem_a (fst st) p (snd (snd st))))
+| TSeq k m => prog_sem_fix m (prog_sem_fix k st)
+| TIFa k op1 op2=> if (eval_bexp (fst (snd st)) k) then (prog_sem_fix op1 st) else (prog_sem_fix op2 st)
+| TSKIP => st
+| THad b => st
+| TNew x n => (new_env x n (fst st), snd st)
+| TMeas x qs e1 => prog_sem_fix e1 
+          (fst st,(new_env x (N.to_nat (grab_nval ((snd (snd st)) qs))) (fst (snd st)), snd (snd st)))
 end.
+
 
 Definition env_equivb vars (st st' : var -> nat) :=
   forallb (fun x =>  st x =? st' x) vars.
 
-Definition st_equivb (rmax:nat) (vars: list posi) (st st': eta_state) :=
-  forallb (fun x => basis_val_eq rmax (st x) (st' x)) vars.
+Fixpoint foralln (n:nat) (f:nat -> bool) :=
+   match n with 0 => true | S m => f m && foralln m f end.
+
+  Definition basis_val_eq_a (rmax: nat) (x y : basis_val_a) :=
+      match (x,y) with (NvalA b, NvalA b') => N.eqb b b'
+                   | (RvalA bl1, RvalA bl2) => foralln rmax (fun n => rz_val_eq rmax (bl1 n) (bl2 n))
+                   | _ => false
+      end.
+
+Definition st_equivb (env:var -> nat) (vars: list var) (st st': eta_state_a) :=
+  forallb (fun x => basis_val_eq_a (env x) (st x) (st' x)) vars.
 
 From Coq Require Import Arith NArith.
 From QuickChick Require Import QuickChick.
 (* Require Import Testing. *)
 
-Definition bv2Eta (n:nat) (x:var) (l: nat) : eta_state :=
-   let f := nat2fb l in
-   fun p => if (snd p <? n) && (fst p =? x) then Nval (f (snd p)) else Nval false.
+Check shrinkNat.
+
+Definition bv2Eta (n:nat) (x:var) (l: nat) : eta_state_a := (fun y => if x =? y then NvalA (N.of_nat (l mod 2^n)) else NvalA 0).
 
 (* Examples. We use the constant hard-code variable names below. *)
 Definition x_var : var := 0.
@@ -93,19 +157,8 @@ Fixpoint lst_posi (n:nat) (x:var) :=
   In Ocaml, you can input a variable name for P, 
  *)
 Definition uniform_state (n:nat) (m:nat) := 
-          fun P => New (lst_posi n x_var) [;] New ([(y_var,0)]) [;] Had (lst_posi n x_var)
-                             [;] Less (lst_posi n x_var) m (y_var,0) [;] Meas z_var [(y_var,0)] (IFa (CEq z_var (Num 1)) ESKIP P).
-
-Fixpoint repeat_operator_ICU_Add (a b: list posi):= 
-  match a with 
-| nil => ESKIP 
-| h::t => (repeat_operator_ICU_Add t b) [;] (ICU h (Ora (Add b 1)))
-end.
-
-Definition hamming_weight_superposition (n m:nat) := 
-  fun P =>  New (lst_posi n x_var) [;] New (lst_posi n y_var) [;] Had (lst_posi n x_var)
-                             [;] repeat_operator_ICU_Add (lst_posi n x_var) (lst_posi n y_var)
-                               [;] Meas z_var (lst_posi n x_var) (IFa (CEq z_var (Num 1)) ESKIP P).
+          fun P => TNew x_var n {;} TNew y_var 1 {;} THad x_var
+                             {;} TLess x_var m (y_var,0) {;} TMeas z_var y_var (TIFa (CEq z_var (Num 1)) TSKIP P).
 
 Module Simple.
 
@@ -116,7 +169,7 @@ Module Simple.
 
   (* Definition cvars := [z_var]. *)
 
-  Definition qvars (n: nat) : list posi := (y_var,0)::(lst_posi n x_var).
+  Definition qvars : list var := y_var::[x_var].
 
   Definition init_env : var -> nat := fun _ => 0.
 
@@ -134,13 +187,12 @@ Module Simple.
     end. 
 *)
   (* n= number of qubits to put in this state, m is their maximum value. Here, both lead to skips, but one sets z_var equal to 1, which affects how simple_eq tests it.*)
-  Definition uniform_s (n:nat) (m:nat) := 
-       Less (lst_posi n x_var) m (y_var,0) [;] Meas z_var ([(y_var,0)]) (IFa (CEq z_var (Num 1)) ESKIP ESKIP).
-  Definition simple_eq (e:exp) (v:nat) (n: nat) := 
-     let (env,qstate) := prog_sem_fix n e (init_env,(qvars n,bv2Eta n x_var v)) in
-        if env z_var =? 1 then a_nat2fb (posi_list_to_bitstring (fst qstate) (snd qstate)) n <? v  else v <=?  a_nat2fb (posi_list_to_bitstring (fst qstate) (snd qstate)) n.
+
+  Definition simple_eq (e:exp_a) (v:nat) (n: nat) := 
+     let (env,qstate) := prog_sem_fix e (init_env,(init_env,bv2Eta n x_var v)) in
+        if (fst qstate) z_var =? 1 then N.to_nat (grab_nval ((snd qstate) x_var)) <? v else v <=? N.to_nat (grab_nval ((snd qstate) x_var)).
   Conjecture uniform_correct :
-    forall (n:nat) (vx : nat), vx < 2^n -> simple_eq (uniform_s n vx) vx n = true.
+    forall (n:nat) (vx : nat), vx < 2^n -> simple_eq (uniform_state n vx TSKIP) vx n = true.
 
 End Simple.
 
@@ -151,7 +203,20 @@ QuickChick (Simple.uniform_correct 8).
 QuickChick (Simple.uniform_correct 60). 
 
 
-Definition exp_comparison (e1 e2: exp): bool :=
+Fixpoint repeat_operator_ICU_Add (a b: var) (n:nat):= 
+  match n with 
+| 0 => TSKIP 
+| S m => (repeat_operator_ICU_Add a b m) {;} (TICU (a,m) (TOra (TAdd b 1)))
+end.
+
+Definition hamming_weight_superposition (n m:nat) := 
+  fun P =>  TNew x_var n {;} TNew y_var n {;} THad x_var
+                             {;} repeat_operator_ICU_Add x_var y_var n
+                               {;} TMeas z_var y_var (TIFa (CEq z_var (Num m)) TSKIP P).
+
+
+(*
+Definition exp_comparison (e1 e2: exp_a): bool :=
   match e1 with 
   | Next p => match e2 with 
         | Next q => true
@@ -183,18 +248,18 @@ Definition exp_comparison (e1 e2: exp): bool :=
       end              
   end.
 
-(*
+
 Definition exp_map_comparison (e1: (exp->exp)) (e2: (exp->exp)): bool:=
 (exp_comparison (e1 ESKIP) (e2 ESKIP))
 && (exp_comparison (e1 IFa _ _ _) (e2 IFa)). 
 Lemma exp_of_uniform_state: forall (m n: nat) (e1 e2 e3: exp), (exp_comparison (uniform_state m n e3) (ESeq e1 e2))=true.
 Proof. intros. unfold uniform_state. unfold exp_comparison.  reflexivity. Qed. 
-*)
+
 
 
 Module Test_prop. 
 Conjecture uniform_state_eskip_behavior: forall (m: nat) (n: nat),
-exp_comparison ((uniform_state m n) ESKIP) ((uniform_state n m) ESKIP) = true.
+exp_comparison ((uniform_state m n) TSKIP) ((uniform_state n m) TSKIP) = true.
 
 Conjecture uniform_state_new_behavior: forall (m n o: nat) (x: var),
 exp_comparison ((uniform_state m n) (New (lst_posi o x))) ((uniform_state n m) (New (lst_posi o x))) = true.
@@ -203,7 +268,7 @@ Conjecture uniform_state_new_eskip_behavior: forall (m n o: nat) (x: var),
 exp_comparison ((uniform_state m n) (New (lst_posi o x))) ((uniform_state n m) ESKIP) = true.
 
 End Test_prop.
-
+*)
 (* Takes a boolean and returns 1 if it's true and 0 if it's false *)
 Definition bool_to_nat (b: bool) :=
   match b with
@@ -233,43 +298,38 @@ Module Hamming.
     end. *)
 
   (* Quantum registers, accessible with x_var and y_var *)
-  Definition yvars:= (lst_posi state_qubits y_var).
-
-  Definition xvars := (lst_posi state_qubits x_var).
-
-  Definition qvars : list posi := yvars++xvars.
+  Definition qvars : list var := x_var::[y_var].
 
   (* Environment to start with; all variables set to 0 *)
   Definition init_env : var -> nat := fun _ => 0.
 
   (* not sure if this is actually needed *)
-  Definition init_st : eta_state := fun _ => Nval false.
+  Definition init_st : eta_state_a := fun _ => NvalA 0.
 
   (* For the hamming_test_eq, gets the hamming weight of a bitstring
     bs is the bitstring, n is the length of the bitstring *)
-  Fixpoint hamming_weight_of_bitstring' (n: nat) (bs: (nat -> bool)) (re:nat) :=
+  Fixpoint hamming_weight_of_N' (n: nat) (bs: N) (re:nat) :=
     match n with
     | 0 => re
-    | S m => if bs m then hamming_weight_of_bitstring' m bs (re+1) else hamming_weight_of_bitstring' m bs re
+    | S m => if N.testbit bs (N.of_nat m) then hamming_weight_of_N' m bs (re+1) else hamming_weight_of_N' m bs re
     end.
-  Definition hamming_weight_of_bitstring n bs := hamming_weight_of_bitstring' n bs 0.
+  Definition hamming_weight_of_N n bs := hamming_weight_of_N' n bs 0.
 
   (* Prepare a uniform superposition across all states that have a hamming weight equal to w.
     n is the number of qubits in the register being preapred; 
     h_n is the number of qubits to use when measuring the hamming weight
   *)
-  Definition hamming_state (w:nat):=
+  (*Definition hamming_state (w:nat):=
     (repeat xvars (fun (p:posi) => (ICU p (Ora (Add yvars 1))))) [;]
       Meas z_var yvars (IFa (CEq z_var (Num w)) ESKIP ESKIP).
-
-  Definition hamming_test_eq (e:exp) (n:nat) (v:nat) := 
-     let (env,qstate) := prog_sem_fix state_qubits e (init_env,(qvars,bv2Eta state_qubits x_var v)) in
-        env z_var =?  (hamming_weight_of_bitstring state_qubits 
-           (posi_list_to_bitstring (xvars) (snd qstate))).
+*)
+  Definition hamming_test_eq (e:exp_a) (n:nat) (v:nat) := 
+     let (env,qstate) := prog_sem_fix e (init_env,(init_env,bv2Eta state_qubits x_var v)) in
+        (fst qstate) z_var =? hamming_weight_of_N state_qubits (grab_nval ((snd qstate) x_var)).
 
   Conjecture hamming_state_correct:
-    forall (vx:nat), vx < 2 ^ state_qubits -> hamming_test_eq (hamming_state (hamming_weight_of_bitstring state_qubits (nat2fb vx)))
-              (hamming_weight_of_bitstring state_qubits (nat2fb vx)) vx = true.
+    forall (vx:nat), vx < 2 ^ state_qubits -> 
+        hamming_test_eq (hamming_weight_superposition state_qubits (hamming_weight_of_N state_qubits (N.of_nat vx)) TSKIP) state_qubits vx = true.
 
 End Hamming.
 (* Check @choose. *)
