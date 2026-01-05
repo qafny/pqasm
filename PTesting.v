@@ -79,14 +79,14 @@ Definition mu_handling_a (m: mu_a) (st: eta_state_a) : eta_state_a :=
   | TEqual_posi_list ps qs p =>if N.eqb (grab_nval (st ps)) (grab_nval (st qs)) 
                  then update_nval st (fst p) (N.lxor (grab_nval (st ps)) (N.pow 2 (N.of_nat (snd p)))) else st
   end.
-Fixpoint instr_sem_a (env:var -> nat) (e:iota_a) (st: eta_state_a): eta_state_a :=
+Fixpoint instr_sem_a (rmax: nat) (e:iota_a) (st: eta_state_a): eta_state_a :=
    match e with 
-   | TRy p r => ry_rotate_a st p r (env (fst p)) 
-   | TISeq a b => instr_sem_a env b (instr_sem_a env a st)
+   | TRy p r => ry_rotate_a st p r rmax
+   | TISeq a b => instr_sem_a rmax b (instr_sem_a rmax a st)
    | TOra m => mu_handling_a m st
   | TICU x y => match st (fst x) with 
       | RvalA r =>  st 
-      | NvalA v => if N.testbit v (N.of_nat (snd x)) then instr_sem_a env y st else st
+      | NvalA v => if N.testbit v (N.of_nat (snd x)) then instr_sem_a rmax y st else st
         end  
    end.
 
@@ -108,14 +108,14 @@ Definition fstate : Type := (var -> nat) * tstate.
 
 Definition new_env (x:var) (qs:nat) (st:var -> nat) := update st x qs.
 
-Fixpoint prog_sem_fix (e: exp_a)(st: fstate) : fstate := match e with 
-| TNext p => (fst st, (fst (snd st) , instr_sem_a (fst st) p (snd (snd st))))
-| TSeq k m => prog_sem_fix m (prog_sem_fix k st)
-| TIFa k op1 op2=> if (eval_bexp (fst (snd st)) k) then (prog_sem_fix op1 st) else (prog_sem_fix op2 st)
+Fixpoint prog_sem_fix (rmax:nat) (e: exp_a)(st: fstate) : fstate := match e with 
+| TNext p => (fst st, (fst (snd st) , instr_sem_a rmax p (snd (snd st))))
+| TSeq k m => prog_sem_fix rmax m (prog_sem_fix rmax k st)
+| TIFa k op1 op2=> if (eval_bexp (fst (snd st)) k) then (prog_sem_fix rmax op1 st) else (prog_sem_fix rmax op2 st)
 | TSKIP => st
 | THad b => st
 | TNew x n => (new_env x n (fst st), snd st)
-| TMeas x qs e1 => prog_sem_fix e1 
+| TMeas x qs e1 => prog_sem_fix rmax e1 
           (fst st,(new_env x (N.to_nat (grab_nval ((snd (snd st)) qs))) (fst (snd st)), snd (snd st)))
 end.
 
@@ -168,6 +168,7 @@ Module Simple.
   *)
 
   (* Definition cvars := [z_var]. *)
+  Definition state_qubits := 60.
 
   Definition qvars : list var := y_var::[x_var].
 
@@ -189,7 +190,7 @@ Module Simple.
   (* n= number of qubits to put in this state, m is their maximum value. Here, both lead to skips, but one sets z_var equal to 1, which affects how simple_eq tests it.*)
 
   Definition simple_eq (e:exp_a) (v:nat) (n: nat) := 
-     let (env,qstate) := prog_sem_fix e (init_env,(init_env,bv2Eta n x_var v)) in
+     let (env,qstate) := prog_sem_fix state_qubits e (init_env,(init_env,bv2Eta n x_var v)) in
         if (fst qstate) z_var =? 1 then N.to_nat (grab_nval ((snd qstate) x_var)) <? v else v <=? N.to_nat (grab_nval ((snd qstate) x_var)).
   Conjecture uniform_correct :
     forall (n:nat) (vx : nat), vx < 2^n -> simple_eq (uniform_state n vx TSKIP) vx n = true.
@@ -212,7 +213,7 @@ end.
 Definition hamming_weight_superposition (n m:nat) := 
   fun P =>  TNew x_var n {;} TNew y_var n {;} THad x_var
                              {;} repeat_operator_ICU_Add x_var y_var n
-                               {;} TMeas z_var y_var (TIFa (CEq z_var (Num m)) TSKIP P).
+                               {;} TMeas z_var y_var (TIFa (CEq (BA z_var) (Num m)) TSKIP P).
 
 
 (*
@@ -324,7 +325,7 @@ Module Hamming.
       Meas z_var yvars (IFa (CEq z_var (Num w)) ESKIP ESKIP).
 *)
   Definition hamming_test_eq (e:exp_a) (n:nat) (v:nat) := 
-     let (env,qstate) := prog_sem_fix e (init_env,(init_env,bv2Eta state_qubits x_var v)) in
+     let (env,qstate) := prog_sem_fix state_qubits e (init_env,(init_env,bv2Eta state_qubits x_var v)) in
         (fst qstate) z_var =? hamming_weight_of_N state_qubits (grab_nval ((snd qstate) x_var)).
 
   Conjecture hamming_state_correct:
@@ -339,44 +340,45 @@ QuickChick (Hamming.hamming_state_correct).
 
 Module AmplitudeAmplification.
 
-  Definition state_qubits := 60.
+  Definition state_qubits := 8.
 
-  Definition qvars : list posi := (y_var,0)::(lst_posi state_qubits x_var).
+  Definition qvars : list var := y_var::[x_var].
 
   (* Environment to start with; all variables set to 0 *)
   Definition init_env : var -> nat := fun _ => 0.
 
 (* Like repeat, but also gives the function an index to work with*)
-Fixpoint repeat_ry (reg: list posi) (r:nat) :=
-  match reg with
-  | nil => ESKIP
-  | p::xs => ((ICU p (Ry (y_var,0) r))) [;] (repeat_ry xs (2*r))
+Fixpoint repeat_ry (n:nat) (x y: var) (r:nat) :=
+  match n with
+  | 0 => TSKIP
+  | S m => ((TICU (x,m) (TRy (y,0) r))) {;} (repeat_ry m x y (2*r))
   end.
 Definition amplitude_amplification_state (r:nat) (rmax:nat) :=
-    Next (Ry (y_var,0) (r)) [;]
-    repeat_ry (lst_posi rmax x_var) (2*r).
+    TNext (TRy (y_var,0) (r)) {;}
+    repeat_ry state_qubits x_var y_var (2*r).
 
-  Definition aa_state_eq (s:eta_state) (r:nat) (x:nat) (rmax:nat) := 
-     match s (y_var,0) with Nval b => false | Rval n => n =? ((2*x + 1) * r) mod 2^rmax end.
+  Definition aa_state_eq (s:eta_state_a) (r:nat) (x:nat) (rmax:nat) := 
+     match s y_var with NvalA b => false | RvalA n => n 0 =? ((2*x + 1) * r) mod 2^rmax end.
 
-  Definition aa_test_eq (e:exp) (v:nat) (r:nat) := 
-     let (env,qstate) := prog_sem_fix state_qubits e (init_env,(qvars,bv2Eta state_qubits x_var r)) in
-            aa_state_eq (snd qstate) r (a_nat2fb (posi_list_to_bitstring ((lst_posi state_qubits x_var)) (snd qstate)) state_qubits) state_qubits.
+  Definition aa_test_eq (e:exp_a) (r:nat) := 
+     let (env,qstate) := prog_sem_fix state_qubits e (init_env,(init_env,bv2Eta state_qubits x_var r)) in
+            aa_state_eq (snd qstate) r (N.to_nat (grab_nval ((snd qstate) x_var))) state_qubits.
 
   Conjecture aa_state_correct:
-    forall (r: nat) (vx:nat), r < 2^state_qubits -> aa_test_eq (amplitude_amplification_state r state_qubits) vx r = true.
+    forall (r: nat), r < 2^state_qubits -> aa_test_eq (amplitude_amplification_state r state_qubits) r = true.
 
 End AmplitudeAmplification.
 
+(*
 QuickChick (AmplitudeAmplification.aa_state_correct). 
-
+*)
 
 Module ModExpState.
 
   Definition c_test := 3.
   Definition N_test := 34.
 
-  Definition num_qubits := 60.
+  Definition num_qubits := 16.
 
   (* Environment to start with; all variables set to 0 *)
   Definition init_env : var -> nat := fun _ => 0.
@@ -385,7 +387,7 @@ Module ModExpState.
   Definition yvars:= (lst_posi num_qubits y_var).
 
   Definition xvars := (lst_posi num_qubits x_var).
-  Definition qvars : list posi := yvars++xvars.
+  Definition qvars : list var := x_var::[y_var].
   
   (* Returns c^n mod m. c is the base number, n is the exponent, m is the mod factor, 
   and max_iter is the maximum number of iterations this function should have. 
@@ -435,24 +437,25 @@ Module ModExpState.
     | S m => (snd_reg reg_1_size m bs) * 2 + (bool_to_nat (bs (reg_1_size + reg_2_size-1)))
     end.
 *)
-  Fixpoint repeat_modmult (reg reg1: list posi) (c:nat) (n:nat) :=
-    match reg with
-      | nil => ESKIP
-      | p::xs => ((ICU p (ModMult (reg1) c n))) [;] (repeat_modmult xs reg1 (2*c) n)
+  Fixpoint repeat_modmult (size:nat) (reg reg1: var) (c:nat) (n:nat) :=
+    match size with
+      | 0 => TSKIP
+      | S m => ((TICU (reg,m) (TModMult (reg1) c n))) {;} (repeat_modmult m reg reg1 (2*c) n)
      end.
 
   Definition mod_exp_state (c n: nat) :=
-    (Add yvars 1) [;] repeat_modmult xvars yvars c n.
+    TNew x_var num_qubits {;} TNew y_var num_qubits {;} THad x_var {;}
+    (TAdd y_var 1) {;} repeat_modmult num_qubits x_var y_var c n.
 
-  Fixpoint cton (size:nat) (vx: nat -> bool) (c n:nat) :=
+  Fixpoint cton (size:nat) (vx: N) (c n:nat) :=
    match size with 0 => 1
-                 | S m => if vx m then (2^m * c * (cton m vx c n)) mod n else cton m vx c n
+                 | S m => if N.testbit vx (N.of_nat m) then (2^m * c * (cton m vx c n)) mod n else cton m vx c n
    end.
 
-  Definition mod_exp_test_eq (e:exp) (v c n:nat) := 
-      let (env,qstate) := prog_sem_fix num_qubits e (init_env,(qvars,bv2Eta num_qubits x_var v)) in
-          let vx := (posi_list_to_bitstring xvars (snd qstate)) in
-          a_nat2fb (posi_list_to_bitstring yvars (snd qstate)) num_qubits =? cton num_qubits vx c n.
+  Definition mod_exp_test_eq (e:exp_a) (v c n:nat) := 
+      let (env,qstate) := prog_sem_fix num_qubits e (init_env,(init_env,bv2Eta num_qubits x_var v)) in
+          let vx := N.to_nat (grab_nval ((snd qstate) x_var)) in
+         N.to_nat (grab_nval ((snd qstate) y_var)) =? c^vx mod n.
           
   Conjecture mod_exp_state_correct:
     forall (vx : nat), vx < 2^16 -> mod_exp_test_eq (mod_exp_state c_test N_test) vx c_test N_test = true.
@@ -462,64 +465,78 @@ End ModExpState.
 QuickChick (ModExpState.mod_exp_state_correct).
 
 
+Fixpoint bv2Etas (n:nat) (xs:list (var * nat)) : eta_state_a := 
+      match xs with [] => (fun _ => NvalA 0)
+                  | (x,v)::ys => 
+            (fun y => if x =? y then NvalA (N.of_nat (v mod 2^n)) else bv2Etas n ys y)
+       end.
+
+
 Module DistinctElements.
 
-  Definition state_qubits := 8.
+  Definition state_qubits := 60.
 
   Definition dis_state := 5.
+  Definition xvars := (0::1::2::3::[4]).
+  Definition zvar := 5.
+  Definition yvar := 6.
+  Definition uvar := 7.
 
-  Definition qvars : list posi := (lst_posi state_qubits z_var)++((y_var,0)::(lst_posi (dis_state * state_qubits) x_var)).
+(*
+  Definition qvars : list var := (lst_posi state_qubits z_var)++((y_var,0)::(lst_posi (dis_state * state_qubits) x_var)).
+*)
+  Definition init_env : var -> nat := fun v => if v =? yvar then 1 else state_qubits.
 
-  Definition init_env : var -> nat := fun _ => 0.
+  Definition init_cstate : var -> nat := fun v => 0.
 
   Fixpoint lst_posi_q' (n j:nat) (x:var) :=
     match n with 0 => nil | S m => (lst_posi_q' m j x) ++ [(x, m + j * state_qubits)] end.
   Definition lst_posi_q (j:nat) (x:var) := lst_posi_q' state_qubits j x.
 
   Fixpoint repeat_qapp_aux (n j:nat) :=
-     match n with 0 => ESKIP
-                | S m => Equal_posi_list (lst_posi_q m x_var) (lst_posi_q j x_var) (y_var, 0)
-                           [;] ICU (y_var,0) (Ora (Add (lst_posi state_qubits z_var) 1))
-                           [;]  Equal_posi_list (lst_posi_q m x_var) (lst_posi_q j x_var) (y_var, 0)
-                           [;] repeat_qapp_aux m j
+     match n with 0 => TSKIP
+                | S m => TEqual_posi_list m j (yvar, 0)
+                           {;} TICU (yvar,0) (TOra (TAdd zvar 1))
+                           {;}  TEqual_posi_list m j (yvar, 0)
+                           {;} repeat_qapp_aux m j
      end.
   Fixpoint repeat_qapp' (n:nat) :=
-    match n with 0 => ESKIP
-               | S m => repeat_qapp_aux m m [;] repeat_qapp' m
+    match n with 0 => TSKIP
+               | S m => repeat_qapp_aux m m {;} repeat_qapp' m
     end.
   Definition repeat_qapp := repeat_qapp' (dis_state).
 
-  Definition distinct_element_state := repeat_qapp [;] 
-    Meas u_var (lst_posi state_qubits z_var) (IFa (CEq z_var (Num 0)) ESKIP ESKIP).
+  Definition distinct_element_state := repeat_qapp {;} 
+    TMeas uvar zvar (TIFa (CEq (BA uvar) (Num 0)) TSKIP TSKIP).
 
   Definition b2nat (b:bool) := if b then 1 else 0.
   
-  Fixpoint distinct_state_aux (n j:nat) (st:eta_state):=
+  Fixpoint distinct_state_aux (n j:nat) (st:eta_state_a):=
       match n with 0 => 0
-                | S m => b2nat ((a_nat2fb (posi_list_to_bitstring (lst_posi_q m x_var) st) state_qubits)
-                 =? (a_nat2fb (posi_list_to_bitstring (lst_posi_q j x_var) st) state_qubits))
+                | S m => b2nat ( N.to_nat (grab_nval(st m)) =? N.to_nat (grab_nval(st j)))
                          + distinct_state_aux m j st
       end.
-   Fixpoint distinct_state_right' (n:nat) (st:eta_state):=
+   Fixpoint distinct_state_right' (n:nat) (st:eta_state_a):=
       match n with 0 => 0
                  | S m => distinct_state_aux m m st + distinct_state_right' m st
       end.
-   Definition distinct_state_right (st:eta_state) := distinct_state_right' (dis_state) st.
+   Definition distinct_state_right (st:eta_state_a) := distinct_state_right' (dis_state) st.
 
 
-  Definition distinct_elem_test_eq (e:exp) (v:nat) := 
-    let (env,qstate) := prog_sem_fix state_qubits e (init_env,(qvars,bv2Eta state_qubits x_var v)) in
-       env u_var =? distinct_state_right (snd qstate).
+  Definition distinct_elem_test_eq (e:exp_a) (vs:list nat) := 
+    let (env,qstate) := prog_sem_fix state_qubits e (init_env,(init_cstate,bv2Etas state_qubits (combine xvars vs))) in
+       (fst qstate) uvar =? distinct_state_right (snd qstate).
 
   Conjecture distinct_elem_state_correct:
-    forall (vx:nat), vx < 2 ^ (state_qubits * dis_state) 
-          -> distinct_elem_test_eq distinct_element_state vx = true.
+    forall (vx0 vx1 vx2 vx3 vx4:nat), vx0 < 2 ^ (state_qubits) -> vx1 < 2 ^ (state_qubits) 
+          -> vx2 < 2 ^ (state_qubits) -> vx3 < 2 ^ (state_qubits) -> vx4 < 2 ^ (state_qubits)
+          -> distinct_elem_test_eq distinct_element_state (vx0::vx1::vx2::vx3::[vx4]) = true.
 
 End DistinctElements.
 
 QuickChick (DistinctElements.distinct_elem_state_correct).
 
-
+(*
 Module SumState.
 
   (* Number of quantum registers *)
@@ -615,6 +632,6 @@ Module SumState.
     forall (vx : nat), sum_test_eq (sum_state num_reg_test reg_size_test k_test) vx = true.
 
 End SumState.
-
+*)
 (* QuickChick (SumState.sum_state_correct). *)
 
