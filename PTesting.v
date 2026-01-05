@@ -40,7 +40,7 @@ Inductive mu_a := TAdd (ps: var) (n:N) (* we add nat to the bitstring represenat
 Inductive iota_a:= TISeq (k: iota_a) (m: iota_a) 
                  | TICU (x:posi) (y:iota_a)
                  | TOra (e:mu_a) 
-                 | TRy (p: posi) (r: rz_val_PQASM).
+                 | TRy (p: posi) (r: N).
 
 Coercion TOra : mu_a >-> iota_a.
 
@@ -50,20 +50,27 @@ Inductive exp_a := TSKIP | TNext (p: iota_a) | THad (b:var) | TNew (b:var) (n:na
 Coercion TNext : iota_a >-> exp_a.
 Notation "e0 {;} e1" := (TSeq e0 e1) (at level 50) : exp_scope.
 
-Inductive basis_val_a := NvalA (b:N) | RvalA (f:nat -> nat).
+Inductive basis_val_a := NvalA (b:N) | RvalA (f:nat -> N).
 
 Definition eta_state_a : Type := var -> basis_val_a.
 
 Definition grab_nval (b:basis_val_a) := match b with NvalA b => b | RvalA f => (N.of_nat 0) end.
 Definition update_nval (st: eta_state_a) (x:var) (n:N) := update st x (NvalA n).
+Definition grab_rval (b:basis_val_a) := match b with NvalA b => (fun _ => N.of_nat 0) | RvalA f => f end.
 
-Definition allZero : nat -> nat := fun _ => 0.
+Definition allZero : nat -> N := fun _ => N.of_nat 0.
 
-Definition ry_rotate_a (st:eta_state_a) (p:posi) (r:rz_val_PQASM) (rmax:nat): eta_state_a :=
+Definition pi32_a (rmax:N) : N:= (N.pow 2 (rmax-1)) + (N.pow 2 (rmax-2)).
+
+Definition angle_sum_a (f g:N) (rmax:N) :N := (f + g) mod 2^rmax.
+
+Definition angle_sub_a (f g: N) (rmax:N) :N := if N.ltb f g then (N.pow 2 rmax) - (g - f) else f - g.
+
+Definition ry_rotate_a (st:eta_state_a) (p:posi) (r:N) (rmax:N): eta_state_a :=
    match st (fst p) with  NvalA b2 => if N.testbit b2 (N.of_nat (snd p))
-                                     then update st (fst p) (RvalA (update allZero (snd p) (angle_sub (pi32 rmax) r rmax)))
+                                     then update st (fst p) (RvalA (update allZero (snd p) (angle_sub_a (pi32_a rmax) r rmax)))
                                      else update st (fst p) (RvalA (update allZero (snd p) r))
-                      | RvalA r1 => update st (fst p) (RvalA (update r1 (snd p) (angle_sum (r1 (snd p)) r rmax)))
+                      | RvalA r1 => update st (fst p) (RvalA (update r1 (snd p) (angle_sum_a (r1 (snd p)) r rmax)))
    end.
 
 Definition mu_handling_a (m: mu_a) (st: eta_state_a) : eta_state_a :=
@@ -78,7 +85,7 @@ Definition mu_handling_a (m: mu_a) (st: eta_state_a) : eta_state_a :=
   | TEqual_posi_list ps qs p =>if N.eqb (grab_nval (st ps)) (grab_nval (st qs)) 
                  then update_nval st (fst p) (N.lxor (grab_nval (st (fst p))) (N.pow 2 (N.of_nat (snd p)))) else st
   end.
-Fixpoint instr_sem_a (rmax: nat) (e:iota_a) (st: eta_state_a): eta_state_a :=
+Fixpoint instr_sem_a (rmax: N) (e:iota_a) (st: eta_state_a): eta_state_a :=
    match e with 
    | TRy p r => ry_rotate_a st p r rmax
    | TISeq a b => instr_sem_a rmax b (instr_sem_a rmax a st)
@@ -108,7 +115,7 @@ Definition fstate : Type := (var -> nat) * tstate.
 Definition new_env (x:var) (qs:nat) (st:var -> nat) := update st x qs.
 
 Fixpoint prog_sem_fix (rmax:nat) (e: exp_a)(st: fstate) : fstate := match e with 
-| TNext p => (fst st, (fst (snd st) , instr_sem_a rmax p (snd (snd st))))
+| TNext p => (fst st, (fst (snd st) , instr_sem_a (N.of_nat rmax) p (snd (snd st))))
 | TSeq k m => prog_sem_fix rmax m (prog_sem_fix rmax k st)
 | TIFa k op1 op2=> if (eval_bexp (fst (snd st)) k) then (prog_sem_fix rmax op1 st) else (prog_sem_fix rmax op2 st)
 | TSKIP => st
@@ -125,9 +132,11 @@ Definition env_equivb vars (st st' : var -> nat) :=
 Fixpoint foralln (n:nat) (f:nat -> bool) :=
    match n with 0 => true | S m => f m && foralln m f end.
 
+  Definition rz_val_eq_a (rmax:N) (x y : N) := N.eqb (x mod (N.pow 2 rmax)) (y mod (N.pow 2 rmax)).
+
   Definition basis_val_eq_a (rmax: nat) (x y : basis_val_a) :=
       match (x,y) with (NvalA b, NvalA b') => N.eqb b b'
-                   | (RvalA bl1, RvalA bl2) => foralln rmax (fun n => rz_val_eq rmax (bl1 n) (bl2 n))
+                   | (RvalA bl1, RvalA bl2) => foralln rmax (fun n => rz_val_eq_a (N.of_nat rmax) (bl1 n) (bl2 n))
                    | _ => false
       end.
 
@@ -340,7 +349,7 @@ QuickChick (Hamming.hamming_state_correct).
 
 Module AmplitudeAmplification.
 
-  Definition state_qubits := 8.
+  Definition state_qubits := 60.
 
   Definition qvars : list var := y_var::[x_var].
 
@@ -348,30 +357,33 @@ Module AmplitudeAmplification.
   Definition init_env : var -> nat := fun _ => 0.
 
 (* Like repeat, but also gives the function an index to work with*)
-Fixpoint repeat_ry (n:nat) (x y: var) (r:nat) :=
+Fixpoint repeat_ry' (n:nat) (x y: var) (r:N) :=
   match n with
-  | 0 => TSKIP
-  | S m => ((TICU (x,m) (TRy (y,0) r))) {;} (repeat_ry m x y (2*r))
+  | 0 => (TSKIP,r)
+  | S m => let (cir,ra) := (repeat_ry' m x y r) in (cir {;} (TICU (x,m) (TRy (y,0) ra)), N.mul 2 ra)
   end.
-Definition amplitude_amplification_state (r:nat) (rmax:nat) :=
+Definition repeat_ry (n:nat) (x y: var) (r:N) := fst (repeat_ry' n x y r).
+
+Definition amplitude_amplification_state (r:N) :=
     TNext (TRy (y_var,0) (r)) {;}
     repeat_ry state_qubits x_var y_var (2*r).
 
-  Definition aa_state_eq (s:eta_state_a) (r:nat) (x:nat) (rmax:nat) := 
-     match s y_var with NvalA b => false | RvalA n => n 0 =? ((2*x + 1) * r) mod 2^rmax end.
+  Definition aa_state_eq (s:eta_state_a) (r:N) (x:N) (rmax:N) := 
+     match s y_var with NvalA b => false | RvalA n => N.eqb (n 0) (((2*x + 1) * r) mod 2^rmax) end.
 
-  Definition aa_test_eq (e:exp_a) (r:nat) := 
-     let (env,qstate) := prog_sem_fix state_qubits e (init_env,(init_env,bv2Eta state_qubits x_var (N.of_nat r))) in
-            aa_state_eq (snd qstate) r (N.to_nat (grab_nval ((snd qstate) x_var))) state_qubits.
+  Definition aa_test_eq (e:exp_a) (r:N) (v:N) := 
+     let (env,qstate) := prog_sem_fix state_qubits e (init_env,(init_env,bv2Eta state_qubits x_var v)) in
+            aa_state_eq (snd qstate) r (grab_nval ((snd qstate) x_var)) (N.of_nat state_qubits).
 
   Conjecture aa_state_correct:
-    forall (r: nat), r < 2^state_qubits -> aa_test_eq (amplitude_amplification_state r state_qubits) r = true.
+    forall (vx:nat) (r: nat), vx < 2^state_qubits -> 
+           r < 2^state_qubits -> aa_test_eq (amplitude_amplification_state (N.of_nat r)) (N.of_nat r) (N.of_nat vx) = true.
 
 End AmplitudeAmplification.
 
-(*
+
 QuickChick (AmplitudeAmplification.aa_state_correct). 
-*)
+
 
 Module ModExpState.
 
