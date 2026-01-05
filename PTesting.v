@@ -31,10 +31,10 @@ Local Open Scope nat_scope.
 (* 
 Define the equivalent testing syntax and eta_state
 *)
-Inductive mu_a := TAdd (ps: var) (n:(nat)) (* we add nat to the bitstring represenation of ps *)
-              | TLess (ps : var) (n:(nat)) (p:posi) (* we compare ps with n (|ps| < n) store the boolean result in p. *)
-              | TEqual (ps : var) (n:(nat)) (p:posi) (* we compare ps with n (|ps| = n) store the boolean result in p. *)
-              | TModMult (ps : var) (n:(nat)) (m: (nat))
+Inductive mu_a := TAdd (ps: var) (n:N) (* we add nat to the bitstring represenation of ps *)
+              | TLess (ps : var) (n:N) (p:posi) (* we compare ps with n (|ps| < n) store the boolean result in p. *)
+              | TEqual (ps : var) (n:N) (p:posi) (* we compare ps with n (|ps| = n) store the boolean result in p. *)
+              | TModMult (ps : var) (n:N) (m: N)
               | TEqual_posi_list (ps qs: var) (p:posi).
 
 Inductive iota_a:= TISeq (k: iota_a) (m: iota_a) 
@@ -66,16 +66,15 @@ Definition ry_rotate_a (st:eta_state_a) (p:posi) (r:rz_val_PQASM) (rmax:nat): et
                       | RvalA r1 => update st (fst p) (RvalA (update r1 (snd p) (angle_sum (r1 (snd p)) r rmax)))
    end.
 
-
 Definition mu_handling_a (m: mu_a) (st: eta_state_a) : eta_state_a :=
   match m with 
-  | TAdd ps n => update_nval st ps ((grab_nval (st ps)) + (N.of_nat n))
-  | TLess ps n p => if N.leb (grab_nval (st ps)) (N.of_nat n)
+  | TAdd ps n => update_nval st ps ((grab_nval (st ps)) + n)
+  | TLess ps n p => if N.ltb (grab_nval (st ps)) n
                      then update_nval st (fst p) (N.lxor (grab_nval (st ps)) (N.pow 2 (N.of_nat (snd p)))) 
                      else st
-  | TEqual ps n p => if N.eqb (grab_nval (st ps)) (N.of_nat n) 
+  | TEqual ps n p => if N.eqb (grab_nval (st ps)) n 
                     then update_nval st (fst p) (N.lxor (grab_nval (st ps)) (N.pow 2 (N.of_nat (snd p)))) else st
-  | TModMult ps n m =>  update_nval st ps ((N.of_nat n * (grab_nval (st ps))) mod (N.of_nat m))
+  | TModMult ps n m =>  update_nval st ps ((n * (grab_nval (st ps))) mod m)
   | TEqual_posi_list ps qs p =>if N.eqb (grab_nval (st ps)) (grab_nval (st qs)) 
                  then update_nval st (fst p) (N.lxor (grab_nval (st ps)) (N.pow 2 (N.of_nat (snd p)))) else st
   end.
@@ -141,7 +140,7 @@ From QuickChick Require Import QuickChick.
 
 Check shrinkNat.
 
-Definition bv2Eta (n:nat) (x:var) (l: nat) : eta_state_a := (fun y => if x =? y then NvalA (N.of_nat (l mod 2^n)) else NvalA 0).
+Definition bv2Eta (n:nat) (x:var) (l: N) : eta_state_a := (fun y => if x =? y then NvalA (l mod (N.pow 2 (N.of_nat n))) else NvalA 0).
 
 (* Examples. We use the constant hard-code variable names below. *)
 Definition x_var : var := 0.
@@ -156,9 +155,9 @@ Fixpoint lst_posi (n:nat) (x:var) :=
   we define a function P for a one step process of the repeat-until-success.
   In Ocaml, you can input a variable name for P, 
  *)
-Definition uniform_state (n:nat) (m:nat) := 
+Definition uniform_state (n:nat) (m:N) := 
           fun P => TNew x_var n {;} TNew y_var 1 {;} THad x_var
-                             {;} TLess x_var m (y_var,0) {;} TMeas z_var y_var (TIFa (CEq z_var (Num 1)) TSKIP P).
+                             {;} TLess x_var m (y_var,0) {;} TMeas z_var y_var (TIFa (CEq (BA z_var) (Num 1)) TSKIP P).
 
 Module Simple.
 
@@ -189,11 +188,11 @@ Module Simple.
 *)
   (* n= number of qubits to put in this state, m is their maximum value. Here, both lead to skips, but one sets z_var equal to 1, which affects how simple_eq tests it.*)
 
-  Definition simple_eq (e:exp_a) (v:nat) (n: nat) := 
+  Definition simple_eq (e:exp_a) (v:N) (n: nat) := 
      let (env,qstate) := prog_sem_fix state_qubits e (init_env,(init_env,bv2Eta n x_var v)) in
-        if (fst qstate) z_var =? 1 then N.to_nat (grab_nval ((snd qstate) x_var)) <? v else v <=? N.to_nat (grab_nval ((snd qstate) x_var)).
+        if (fst qstate) z_var =? 1 then N.ltb (grab_nval ((snd qstate) x_var)) v else N.leb v (grab_nval ((snd qstate) x_var)).
   Conjecture uniform_correct :
-    forall (n:nat) (vx : nat), vx < 2^n -> simple_eq (uniform_state n vx TSKIP) vx n = true.
+    forall (n:nat) (vx : nat), vx < 2^n -> simple_eq (uniform_state n (N.of_nat vx) TSKIP) (N.of_nat vx) n = true.
 
 End Simple.
 
@@ -324,13 +323,14 @@ Module Hamming.
     (repeat xvars (fun (p:posi) => (ICU p (Ora (Add yvars 1))))) [;]
       Meas z_var yvars (IFa (CEq z_var (Num w)) ESKIP ESKIP).
 *)
-  Definition hamming_test_eq (e:exp_a) (n:nat) (v:nat) := 
+  Definition hamming_test_eq (e:exp_a) (n:nat) (v:N) := 
      let (env,qstate) := prog_sem_fix state_qubits e (init_env,(init_env,bv2Eta state_qubits x_var v)) in
         (fst qstate) z_var =? hamming_weight_of_N state_qubits (grab_nval ((snd qstate) x_var)).
 
   Conjecture hamming_state_correct:
     forall (vx:nat), vx < 2 ^ state_qubits -> 
-        hamming_test_eq (hamming_weight_superposition state_qubits (hamming_weight_of_N state_qubits (N.of_nat vx)) TSKIP) state_qubits vx = true.
+        hamming_test_eq (hamming_weight_superposition state_qubits 
+             (hamming_weight_of_N state_qubits (N.of_nat vx)) TSKIP) state_qubits (N.of_nat vx) = true.
 
 End Hamming.
 (* Check @choose. *)
@@ -361,7 +361,7 @@ Definition amplitude_amplification_state (r:nat) (rmax:nat) :=
      match s y_var with NvalA b => false | RvalA n => n 0 =? ((2*x + 1) * r) mod 2^rmax end.
 
   Definition aa_test_eq (e:exp_a) (r:nat) := 
-     let (env,qstate) := prog_sem_fix state_qubits e (init_env,(init_env,bv2Eta state_qubits x_var r)) in
+     let (env,qstate) := prog_sem_fix state_qubits e (init_env,(init_env,bv2Eta state_qubits x_var (N.of_nat r))) in
             aa_state_eq (snd qstate) r (N.to_nat (grab_nval ((snd qstate) x_var))) state_qubits.
 
   Conjecture aa_state_correct:
@@ -375,10 +375,10 @@ QuickChick (AmplitudeAmplification.aa_state_correct).
 
 Module ModExpState.
 
-  Definition c_test := 3.
-  Definition N_test := 34.
+  Definition c_test :N := 3.
+  Definition N_test :N:= 34.
 
-  Definition num_qubits := 16.
+  Definition num_qubits := 60.
 
   (* Environment to start with; all variables set to 0 *)
   Definition init_env : var -> nat := fun _ => 0.
@@ -437,28 +437,31 @@ Module ModExpState.
     | S m => (snd_reg reg_1_size m bs) * 2 + (bool_to_nat (bs (reg_1_size + reg_2_size-1)))
     end.
 *)
-  Fixpoint repeat_modmult (size:nat) (reg reg1: var) (c:nat) (n:nat) :=
+
+
+
+  Fixpoint repeat_modmult (size:nat) (reg reg1: var) (c:N) (n:N) :=
     match size with
       | 0 => TSKIP
       | S m => ((TICU (reg,m) (TModMult (reg1) c n))) {;} (repeat_modmult m reg reg1 (2*c) n)
      end.
 
-  Definition mod_exp_state (c n: nat) :=
+  Definition mod_exp_state (c n: N) :=
     TNew x_var num_qubits {;} TNew y_var num_qubits {;} THad x_var {;}
     (TAdd y_var 1) {;} repeat_modmult num_qubits x_var y_var c n.
 
-  Fixpoint cton (size:nat) (vx: N) (c n:nat) :=
+  Fixpoint cton (size:nat) (vx: N) (c n:N) :N :=
    match size with 0 => 1
-                 | S m => if N.testbit vx (N.of_nat m) then (2^m * c * (cton m vx c n)) mod n else cton m vx c n
+                 | S m => if N.testbit vx (N.of_nat m) then (N.pow 2 (N.of_nat m) * c * (cton m vx c n)) mod n else cton m vx c n
    end.
 
-  Definition mod_exp_test_eq (e:exp_a) (v c n:nat) := 
+  Definition mod_exp_test_eq (e:exp_a) (v c n:N) := 
       let (env,qstate) := prog_sem_fix num_qubits e (init_env,(init_env,bv2Eta num_qubits x_var v)) in
           let vx := N.to_nat (grab_nval ((snd qstate) x_var)) in
-         N.to_nat (grab_nval ((snd qstate) y_var)) =? c^vx mod n.
+        N.eqb (grab_nval ((snd qstate) y_var)) (N.modulo (N.pow c (N.of_nat vx)) n).
           
   Conjecture mod_exp_state_correct:
-    forall (vx : nat), vx < 2^16 -> mod_exp_test_eq (mod_exp_state c_test N_test) vx c_test N_test = true.
+    forall (vx : nat), 1 < vx < 2^16 -> mod_exp_test_eq (mod_exp_state c_test N_test) (N.of_nat vx) c_test N_test = true.
 
 End ModExpState.
 
