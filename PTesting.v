@@ -438,28 +438,27 @@ Module ModExpState.
     end.
 *)
 
-
+  (* the computation of c^(2^m) mod n can be very slow in Coq. *)
+  Fixpoint cal_mod_pow (c n:N) (m:nat) :=
+    match m with 0 => c
+               | S h => N.modulo (N.mul (cal_mod_pow c n h) (cal_mod_pow c n h)) n
+    end.
 
   Fixpoint repeat_modmult (size:nat) (reg reg1: var) (c:N) (n:N) :=
     match size with
       | 0 => TSKIP
-      | S m => ((TICU (reg,m) (TModMult (reg1) c n))) {;} (repeat_modmult m reg reg1 (2*c) n)
+      | S m => repeat_modmult m reg reg1 c n {;} (TICU (reg,m) (TModMult (reg1) (cal_mod_pow c n m) n))
      end.
 
   Definition mod_exp_state (c n: N) :=
     TNew x_var num_qubits {;} TNew y_var num_qubits {;} THad x_var {;}
-    (TAdd y_var 1) {;} repeat_modmult num_qubits x_var y_var c n.
-
-  Fixpoint cton (size:nat) (vx: N) (c n:N) :N :=
-   match size with 0 => 1
-                 | S m => if N.testbit vx (N.of_nat m) then (N.pow 2 (N.of_nat m) * c * (cton m vx c n)) mod n else cton m vx c n
-   end.
+    (TAdd y_var 1) {;} repeat_modmult 12 x_var y_var c n.
 
   Definition mod_exp_test_eq (e:exp_a) (v c n:N) := 
       let (env,qstate) := prog_sem_fix num_qubits e (init_env,(init_env,bv2Eta num_qubits x_var v)) in
           let vx := N.to_nat (grab_nval ((snd qstate) x_var)) in
         N.eqb (grab_nval ((snd qstate) y_var)) (N.modulo (N.pow c (N.of_nat vx)) n).
-          
+
   Conjecture mod_exp_state_correct:
     forall (vx : nat), 1 < vx < 2^16 -> mod_exp_test_eq (mod_exp_state c_test N_test) (N.of_nat vx) c_test N_test = true.
 
