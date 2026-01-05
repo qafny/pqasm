@@ -70,13 +70,13 @@ Definition mu_handling_a (m: mu_a) (st: eta_state_a) : eta_state_a :=
   match m with 
   | TAdd ps n => update_nval st ps ((grab_nval (st ps)) + n)
   | TLess ps n p => if N.ltb (grab_nval (st ps)) n
-                     then update_nval st (fst p) (N.lxor (grab_nval (st ps)) (N.pow 2 (N.of_nat (snd p)))) 
+                     then update_nval st (fst p) (N.lxor (grab_nval (st (fst p))) (N.pow 2 (N.of_nat (snd p)))) 
                      else st
   | TEqual ps n p => if N.eqb (grab_nval (st ps)) n 
-                    then update_nval st (fst p) (N.lxor (grab_nval (st ps)) (N.pow 2 (N.of_nat (snd p)))) else st
+                    then update_nval st (fst p) (N.lxor (grab_nval (st (fst p))) (N.pow 2 (N.of_nat (snd p)))) else st
   | TModMult ps n m =>  update_nval st ps ((n * (grab_nval (st ps))) mod m)
   | TEqual_posi_list ps qs p =>if N.eqb (grab_nval (st ps)) (grab_nval (st qs)) 
-                 then update_nval st (fst p) (N.lxor (grab_nval (st ps)) (N.pow 2 (N.of_nat (snd p)))) else st
+                 then update_nval st (fst p) (N.lxor (grab_nval (st (fst p))) (N.pow 2 (N.of_nat (snd p)))) else st
   end.
 Fixpoint instr_sem_a (rmax: nat) (e:iota_a) (st: eta_state_a): eta_state_a :=
    match e with 
@@ -452,7 +452,7 @@ Module ModExpState.
 
   Definition mod_exp_state (c n: N) :=
     TNew x_var num_qubits {;} TNew y_var num_qubits {;} THad x_var {;}
-    (TAdd y_var 1) {;} repeat_modmult 12 x_var y_var c n.
+    (TAdd y_var 1) {;} repeat_modmult 10 x_var y_var c n.
 
   Definition mod_exp_test_eq (e:exp_a) (v c n:N) := 
       let (env,qstate) := prog_sem_fix num_qubits e (init_env,(init_env,bv2Eta num_qubits x_var v)) in
@@ -467,10 +467,10 @@ End ModExpState.
 QuickChick (ModExpState.mod_exp_state_correct).
 
 
-Fixpoint bv2Etas (n:nat) (xs:list (var * nat)) : eta_state_a := 
+Fixpoint bv2Etas (n:N) (xs:list (var * N)) : eta_state_a := 
       match xs with [] => (fun _ => NvalA 0)
                   | (x,v)::ys => 
-            (fun y => if x =? y then NvalA (N.of_nat (v mod 2^n)) else bv2Etas n ys y)
+            (fun y => if x =? y then NvalA  (v mod 2^n) else bv2Etas n ys y)
        end.
 
 
@@ -515,7 +515,7 @@ Module DistinctElements.
   
   Fixpoint distinct_state_aux (n j:nat) (st:eta_state_a):=
       match n with 0 => 0
-                | S m => b2nat ( N.to_nat (grab_nval(st m)) =? N.to_nat (grab_nval(st j)))
+                | S m => b2nat (N.eqb (grab_nval(st m)) (grab_nval(st j)))
                          + distinct_state_aux m j st
       end.
    Fixpoint distinct_state_right' (n:nat) (st:eta_state_a):=
@@ -525,14 +525,16 @@ Module DistinctElements.
    Definition distinct_state_right (st:eta_state_a) := distinct_state_right' (dis_state) st.
 
 
-  Definition distinct_elem_test_eq (e:exp_a) (vs:list nat) := 
-    let (env,qstate) := prog_sem_fix state_qubits e (init_env,(init_cstate,bv2Etas state_qubits (combine xvars vs))) in
+  Definition distinct_elem_test_eq (e:exp_a) (vs:list N) := 
+    let (env,qstate) := prog_sem_fix state_qubits e (init_env,(init_cstate,bv2Etas (N.of_nat state_qubits) (combine xvars vs))) in
        (fst qstate) uvar =? distinct_state_right (snd qstate).
+
 
   Conjecture distinct_elem_state_correct:
     forall (vx0 vx1 vx2 vx3 vx4:nat), vx0 < 2 ^ (state_qubits) -> vx1 < 2 ^ (state_qubits) 
           -> vx2 < 2 ^ (state_qubits) -> vx3 < 2 ^ (state_qubits) -> vx4 < 2 ^ (state_qubits)
-          -> distinct_elem_test_eq distinct_element_state (vx0::vx1::vx2::vx3::[vx4]) = true.
+          -> distinct_elem_test_eq distinct_element_state
+                  ((N.of_nat vx0)::(N.of_nat vx1)::(N.of_nat vx2)::(N.of_nat vx3)::[N.of_nat vx4]) = true.
 
 End DistinctElements.
 
