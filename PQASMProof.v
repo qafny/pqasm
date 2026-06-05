@@ -842,7 +842,6 @@ Proof.
   assert (set_In a0 (V ++ rec_union a1)). apply in_or_app. right. easy. easy.
 Qed.
 
-
 Lemma type_preservation:
   forall rmax (aenv: list var) T T' phi phi' e e' r, disjoint_record T -> etype aenv T e T' 
         ->  @prog_sem rmax phi e r phi' e' -> type_consist T phi -> exists T1, 
@@ -933,3 +932,7 @@ generalize dependent e'.
     specialize (mea_type_consist rmax qs th T phi phi' r bl Hconsist H7) as X1. easy.
 Qed.
 
+Lemma translation_correctness: forall rmax (aenv: list var) T T' phi phi' e e' r, etype aenv T e T' 
+        ->  @prog_sem rmax phi e r phi' e' -> type_consist T phi -> exists T1, 
+    etype aenv T1 e' T' /\ type_consist T1 phi'.
+Proof. Admitted.

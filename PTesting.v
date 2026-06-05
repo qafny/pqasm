@@ -10,12 +10,7 @@ Require Import Classical_Prop.
 Require Import RZArith.
 Require Import PQASM.
 
-(*Require Import OQASM.
-Require Import Coq.QArith.QArith.*)
 Import Nat (eqb).
-(*Import Coq.FSets.FMapList.*)
-(*From Coq Require Import BinaryString. 
-From Coq Require Import Lists.ListSet.*)
 (**********************)
 (** Unitary Programs **)
 (**********************)
@@ -125,7 +120,6 @@ Fixpoint prog_sem_fix (rmax:nat) (e: exp_a)(st: fstate) : fstate := match e with
           (fst st,(new_env x (N.to_nat (grab_nval ((snd (snd st)) qs))) (fst (snd st)), snd (snd st)))
 end.
 
-
 Definition env_equivb vars (st st' : var -> nat) :=
   forallb (fun x =>  st x =? st' x) vars.
 
@@ -147,9 +141,17 @@ From Coq Require Import Arith NArith.
 From QuickChick Require Import QuickChick.
 (* Require Import Testing. *)
 
-Check shrinkNat.
+(* Check shrinkNat. *)
 
 Definition bv2Eta (n:nat) (x:var) (l: N) : eta_state_a := (fun y => if x =? y then NvalA (l mod (N.pow 2 (N.of_nat n))) else NvalA 0).
+
+(*if there exists an input for which the test fails in our semantics, then in the original program that input will result in the program not having that property*)
+(*test_fails_on_input -> program_will_have_bug_on_input*)
+(*test_fails_on_input means given a certain input, a property does not hold *)
+(*if test fails on input then program fails; how do we write 'test' and 'program'?*)
+(* (forall A, if prog_sem_fix A != prog_sem A -> bug *)
+Lemma translation_correctness: forall rmax phi phi' e e' r, @prog_sem rmax phi e r phi' e' -> True.
+Proof. Admitted.
 
 (* Examples. We use the constant hard-code variable names below. *)
 Definition x_var : var := 0.
@@ -170,32 +172,11 @@ Definition uniform_state (n:nat) (m:N) :=
 
 Module Simple.
 
-  (* Definition rmax := 16. 
-
-  Definition m := 1000.
-  *)
-
-  (* Definition cvars := [z_var]. *)
   Definition state_qubits := 60.
 
   Definition qvars : list var := y_var::[x_var].
 
   Definition init_env : var -> nat := fun _ => 0.
-
-  (* Definition init_st : eta_state := fun _ => (Rval (fun (n:nat) => true)). *)
-
-(*
-  Fixpoint list_eq (x:posi) (l: list posi) :=
-    match l with nil => false
-               | y::ys => if posi_eq x y then true else list_eq x ys
-    end.
-
-  Fixpoint list_include (l1 l2: list posi) :=
-    match l1 with nil => True
-               | x::xs => (list_eq x l2) && list_include xs l2
-    end. 
-*)
-  (* n= number of qubits to put in this state, m is their maximum value. Here, both lead to skips, but one sets z_var equal to 1, which affects how simple_eq tests it.*)
 
   Definition simple_eq (e:exp_a) (v:N) (n: nat) := 
      let (env,qstate) := prog_sem_fix state_qubits e (init_env,(init_env,bv2Eta n x_var v)) in
@@ -205,12 +186,13 @@ Module Simple.
 
 End Simple.
 
-(*
-QuickChick (Simple.uniform_correct 8). 
-*)
+Compute N.ltb 3 5.
+Compute N.leb 3 5.
+Compute N.ltb 5 5.
+Compute N.leb 5 5.
+(* QuickChick (Simple.uniform_correct 8).  *)
 
 QuickChick (Simple.uniform_correct 60). 
-
 
 Fixpoint repeat_operator_ICU_Add (a b: var) (n:nat):= 
   match n with 
@@ -223,61 +205,6 @@ Definition hamming_weight_superposition (n m:nat) :=
                              {;} repeat_operator_ICU_Add x_var y_var n
                                {;} TMeas z_var y_var (TIFa (CEq (BA z_var) (Num m)) TSKIP P).
 
-
-(*
-Definition exp_comparison (e1 e2: exp_a): bool :=
-  match e1 with 
-  | Next p => match e2 with 
-        | Next q => true
-        | _ => false
-        end
-  | ESKIP => match e2 with 
-      | ESKIP => true
-      | _ => false
-      end
-  | ESeq k m => match e2 with 
-      | ESeq o p => true
-      | _ => false
-      end 
-  | Had b=> match e2 with 
-      | Had c => true
-      | _ => false
-      end  
-| New b=> match e2 with 
-      | New c => true
-      | _ => false
-      end 
-  | Meas x qs e1 => match e2 with 
-      | Meas y qs2 e2 => true
-      | _ => false
-      end 
-  | IFa k op1 op2=> match e2 with 
-      | IFa l op3 op4 => true
-      | _ => false
-      end              
-  end.
-
-
-Definition exp_map_comparison (e1: (exp->exp)) (e2: (exp->exp)): bool:=
-(exp_comparison (e1 ESKIP) (e2 ESKIP))
-&& (exp_comparison (e1 IFa _ _ _) (e2 IFa)). 
-Lemma exp_of_uniform_state: forall (m n: nat) (e1 e2 e3: exp), (exp_comparison (uniform_state m n e3) (ESeq e1 e2))=true.
-Proof. intros. unfold uniform_state. unfold exp_comparison.  reflexivity. Qed. 
-
-
-
-Module Test_prop. 
-Conjecture uniform_state_eskip_behavior: forall (m: nat) (n: nat),
-exp_comparison ((uniform_state m n) TSKIP) ((uniform_state n m) TSKIP) = true.
-
-Conjecture uniform_state_new_behavior: forall (m n o: nat) (x: var),
-exp_comparison ((uniform_state m n) (New (lst_posi o x))) ((uniform_state n m) (New (lst_posi o x))) = true.
-
-Conjecture uniform_state_new_eskip_behavior: forall (m n o: nat) (x: var),
-exp_comparison ((uniform_state m n) (New (lst_posi o x))) ((uniform_state n m) ESKIP) = true.
-
-End Test_prop.
-*)
 (* Takes a boolean and returns 1 if it's true and 0 if it's false *)
 Definition bool_to_nat (b: bool) :=
   match b with
@@ -295,16 +222,9 @@ Fixpoint repeat (reg: list posi) (P: (posi -> exp)) :=
 Module Hamming.
 
   Definition state_qubits := 60.
-  (* Definition target_hamming_w := 17. *)
 
   (* classical variables *)
   Definition cvars := [z_var].
-
-  (* Fixpoint concat (l1 l2: list (var * nat)) :=
-    match l1 with
-    | nil => l2
-    | _ => (fst l1)::(concat (snd l1) l2)
-    end. *)
 
   (* Quantum registers, accessible with x_var and y_var *)
   Definition qvars : list var := x_var::[y_var].
@@ -324,14 +244,6 @@ Module Hamming.
     end.
   Definition hamming_weight_of_N n bs := hamming_weight_of_N' n bs 0.
 
-  (* Prepare a uniform superposition across all states that have a hamming weight equal to w.
-    n is the number of qubits in the register being preapred; 
-    h_n is the number of qubits to use when measuring the hamming weight
-  *)
-  (*Definition hamming_state (w:nat):=
-    (repeat xvars (fun (p:posi) => (ICU p (Ora (Add yvars 1))))) [;]
-      Meas z_var yvars (IFa (CEq z_var (Num w)) ESKIP ESKIP).
-*)
   Definition hamming_test_eq (e:exp_a) (n:nat) (v:N) := 
      let (env,qstate) := prog_sem_fix state_qubits e (init_env,(init_env,bv2Eta state_qubits x_var v)) in
         (fst qstate) z_var =? hamming_weight_of_N state_qubits (grab_nval ((snd qstate) x_var)).
@@ -342,9 +254,7 @@ Module Hamming.
              (hamming_weight_of_N state_qubits (N.of_nat vx)) TSKIP) state_qubits (N.of_nat vx) = true.
 
 End Hamming.
-(* Check @choose. *)
-(* Check returnGen. *)
-(* Sample (choose (0,10)). *)
+
 QuickChick (Hamming.hamming_state_correct). 
 
 Module AmplitudeAmplification.
@@ -381,14 +291,12 @@ Definition amplitude_amplification_state (r:N) :=
 
 End AmplitudeAmplification.
 
-
 QuickChick (AmplitudeAmplification.aa_state_correct). 
-
 
 Module ModExpState.
 
-  Definition c_test :N := 3.
-  Definition N_test :N:= 34.
+  Definition c_test : N := 3.
+  Definition N_test : N := 34.
 
   Definition num_qubits := 60.
 
@@ -401,55 +309,6 @@ Module ModExpState.
   Definition xvars := (lst_posi num_qubits x_var).
   Definition qvars : list var := x_var::[y_var].
   
-  (* Returns c^n mod m. c is the base number, n is the exponent, m is the mod factor, 
-  and max_iter is the maximum number of iterations this function should have. 
-  It's needed to placate Coq. This function requires about log_2 n recursive steps. 
-  Fixpoint mod_pow (c n m max_iter: nat) :=
-    match max_iter with
-    | 0 => 1 mod m
-    | S l => 
-      if n =? 0 then 1 
-      else 
-        let u := (mod_pow c (n/2) m l) in
-          if (n mod 2 =? 0) then 
-            ((u*u) mod m) 
-          else 
-            ((((u*u) mod m)*c) mod m)
-    end.
-
-  (* Returns c^n *)
-  Fixpoint pow(c n: nat) :=
-    match n with 
-    | 0 => 1
-    | S m => c * (pow c m)
-    end.
-
-  Fixpoint repeat (reg: list posi) (P: (posi -> exp)) :=
-    match reg with
-    | nil => ESKIP
-    | p::r => (P p) [;] (repeat r P)
-    end.
-
-  (* Like repeat, but also gives the function an index to work with*)
-  Fixpoint repeat_ind (reg: list posi) (index: nat) (P: (posi -> nat -> exp)) :=
-    match reg with
-    | nil => ESKIP
-    | p::r => (repeat_ind r (index-1) P) [;] (P p index)
-    end.
-
-  Fixpoint fst_reg (reg_1_size: nat) (bs: (nat -> bool)) :=
-    match reg_1_size with
-    | 0 => 0
-    | S m => (fst_reg m bs) * 2 + (bool_to_nat (bs (reg_1_size-1)))
-    end.
-
-  Fixpoint snd_reg (reg_1_size reg_2_size: nat) (bs: (nat -> bool)) :=
-    match reg_2_size with
-    | 0 => 0
-    | S m => (snd_reg reg_1_size m bs) * 2 + (bool_to_nat (bs (reg_1_size + reg_2_size-1)))
-    end.
-*)
-
   (* the computation of c^(2^m) mod n can be very slow in Coq. *)
   Fixpoint cal_mod_pow (c n:N) (m:nat) :=
     match m with 0 => c
@@ -478,13 +337,11 @@ End ModExpState.
 
 QuickChick (ModExpState.mod_exp_state_correct).
 
-
 Fixpoint bv2Etas (n:N) (xs:list (var * N)) : eta_state_a := 
       match xs with [] => (fun _ => NvalA 0)
                   | (x,v)::ys => 
             (fun y => if x =? y then NvalA  (v mod 2^n) else bv2Etas n ys y)
        end.
-
 
 Module DistinctElements.
 
@@ -496,9 +353,6 @@ Module DistinctElements.
   Definition yvar := 6.
   Definition uvar := 7.
 
-(*
-  Definition qvars : list var := (lst_posi state_qubits z_var)++((y_var,0)::(lst_posi (dis_state * state_qubits) x_var)).
-*)
   Definition init_env : var -> nat := fun v => if v =? yvar then 1 else state_qubits.
 
   Definition init_cstate : var -> nat := fun v => 0.
@@ -551,103 +405,3 @@ Module DistinctElements.
 End DistinctElements.
 
 QuickChick (DistinctElements.distinct_elem_state_correct).
-
-(*
-Module SumState.
-
-  (* Number of quantum registers *)
-  Definition num_reg_test := 3.
-
-  (* Size of each register *)
-  Definition reg_size_test := 4.
-
-  (* Target Sum *)
-  Definition k_test := 20.
-
-  (* classical variables *)
-  Definition cvars := [z_var].
-
-  (* Quantum registers; x_var stores all of the state qbits*)
-  Definition qvars : list posi := (lst_posi (num_reg_test*reg_size_test) x_var).
-
-  (* Environment to start with; all variables set to 0 *)
-  Definition init_env : var -> nat := fun _ => 0.
-
-  (* Returns an expression to run P on each qubit position in reg*)
-  Fixpoint repeat (reg: list posi) (P: (posi -> exp)) :=
-    match reg with
-    | nil => ESKIP
-    | p::r => (P p) [;] (repeat r P)
-    end.
-
-  (* Like repeat, but also gives the function an index to work with*)
-  Fixpoint repeat_ind (reg: list posi) (index: nat) (P: (posi -> nat -> exp)) :=
-    match reg with
-    | nil => ESKIP
-    | p::r => (P p index) [;] (repeat_ind r (index-1) P)
-    end.
-
-  (* Returns a list of variables that start at start_var *)
-  Fixpoint lst_var (len: nat) (start_var: var) :=
-    match len with
-    | 0 => nil
-    | S len_m => ((len_m+(start_var:nat)):var)::(lst_var len_m start_var)
-    end.
-
-  (* Repeats an operation on a list of quantum registers *)
-  Fixpoint repeat_reg (P: (list posi -> exp)) (regs: list var) (reg_size: nat):=
-    match regs with
-    | nil => ESKIP
-    | r::rs => (P (lst_posi reg_size r)) [;] (repeat_reg P rs reg_size)
-    end.
-
-  Fixpoint pow_2 (n: nat) :=
-    match n with
-    | 0 => 1
-    | S m => 2*(pow_2 (m))
-    end.
-
-  Definition sum_state (num_reg:nat) (reg_size:nat) (target_sum:nat) :=
-    let prep_list := (lst_var num_reg x_var) in 
-      let sum_var := ((x_var:nat)+num_reg):var in
-        (repeat_reg New prep_list reg_size) [;] (New (lst_posi (reg_size+num_reg) sum_var)) [;]
-        (
-          repeat_reg (
-            fun (lp: list posi) => (
-              repeat_ind lp reg_size (fun (p: posi) (index: nat) => (
-                ICU p (Ora (Add (lst_posi (reg_size + num_reg) sum_var) ( (pow_2 index))))
-              ))
-            )
-          )
-          prep_list
-          reg_size
-        ) [;]
-        Meas z_var (lst_posi (reg_size+num_reg) sum_var) (IFa (CEq z_var (Num target_sum)) ESKIP ESKIP).
-
-  (* Gets a register from a bitstring as a natural number *)
-  Fixpoint bitstring_slice (reg: nat) (reg_size: nat) (ind: nat) (bs: (nat -> bool)) :=
-    match ind with
-    | 0 => 0
-    | S m => (bitstring_slice reg reg_size m bs) * 2 + (bool_to_nat (bs ((reg - 1) * reg_size + (ind-1))))
-    end.
-
-  (* Sum of the integer values in a bitstring in big endian (MSB first) order. reg_size is the number of bits in each integer and n is the number of integers to add up*)
-  Fixpoint sum_of_bitstring (n: nat) (reg_size: nat) (bs: (nat -> bool)) :=
-    match n with
-    | 0 => 0
-    | S m => (bitstring_slice n reg_size reg_size bs) + (sum_of_bitstring m reg_size bs)
-    end.
-
-  (* Just need to get this to work *)
-  Definition sum_test_eq (e:exp) (v:nat) :=
-    let state_qubits := num_reg_test * reg_size_test in
-      let (env,qstate) := prog_sem_fix state_qubits e (init_env,(qvars,bv2Eta state_qubits x_var v)) in
-        if env z_var =? k_test then (sum_of_bitstring num_reg_test reg_size_test (posi_list_to_bitstring (fst qstate) (snd qstate))) =? k_test else true.
-
-  Conjecture sum_state_correct:
-    forall (vx : nat), sum_test_eq (sum_state num_reg_test reg_size_test k_test) vx = true.
-
-End SumState.
-*)
-(* QuickChick (SumState.sum_state_correct). *)
-
