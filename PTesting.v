@@ -150,8 +150,8 @@ Definition bv2Eta (n:nat) (x:var) (l: N) : eta_state_a := (fun y => if x =? y th
 (*test_fails_on_input means given a certain input, a property does not hold *)
 (*if test fails on input then program fails; how do we write 'test' and 'program'?*)
 (* (forall A, if prog_sem_fix A != prog_sem A -> bug *)
-Lemma translation_correctness: forall rmax phi phi' e e' r, @prog_sem rmax phi e r phi' e' -> True.
-Proof. Admitted.
+(* Lemma test_soundness: forall rmax phi phi' e e' r e_a phif, @prog_sem rmax phi e r phi' e' -> snd (snd (prog_sem_fix rmax e_a phif)).
+Proof. Admitted. *)
 
 (* Examples. We use the constant hard-code variable names below. *)
 Definition x_var : var := 0.
